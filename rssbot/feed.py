@@ -1,6 +1,7 @@
 """RSS 2.0 / Atom 피드 가져오기와 파싱."""
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 import time
@@ -62,6 +63,25 @@ def find_secret_param(url: str):
             if key.lower().endswith(SECRET_PARAM_SUFFIXES):
                 return key
     return None
+
+
+def clean_id(raw: str) -> str:
+    """seen·pending에 기록되는 글 ID를 공개해도 안전하게 만든다.
+
+    ID는 guid나 permalink인 경우가 많아 링크처럼 토큰·세션 ID가 실릴 수 있다. 중복 판별에는 값이 안정적이기만 하면
+    되므로, URL 형태이면서 인증 정보가 의심되면 내용 해시로 대체한다. (그렇지 않은 ID는 그대로 둬서 이미 기록된
+    ID와 일치를 유지한다. fragment 등을 지우면 서로 다른 글의 ID가 합쳐질 수 있어 링크처럼 정리하지 않는다.)
+    """
+    if "://" not in raw:
+        return raw
+    try:
+        p = urlparse(raw)
+        sensitive = bool(p.username or p.password or find_secret_param(raw))
+    except ValueError:
+        sensitive = True
+    if sensitive:
+        return "sha1:" + hashlib.sha1(raw.encode("utf-8")).hexdigest()[:20]
+    return raw
 
 
 def clean_link(url: str) -> str:
@@ -151,7 +171,7 @@ def parse_feed(data: bytes) -> Feed:
         else:
             link = _text(fields.get("link"))
             eid = _text(fields.get("guid"))
-        eid = eid or link or etitle
+        eid = clean_id(eid or link or etitle)
         entries.append(Entry(id=eid, title=re.sub(r"\s+", " ", etitle), link=clean_link(link)))
     return Feed(title=html.unescape(title).strip(), entries=entries)
 

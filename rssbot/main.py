@@ -53,7 +53,7 @@ def _defer_timeout():
 
     SIGALRM은 어느 줄에서든 실행을 끊을 수 있어서, 상태를 여러 군데 고치는 도중에 끊기면 (예: seen에는 기록됐는데
     pending은 아직) 반쯤 바뀐 상태가 저장돼 글이나 명령이 영영 사라진다. 상태를 바꾸는 구간은 이 블록으로 감싸 원자적으로 만든다.
-    네트워크 호출처럼 오래 걸릴 수 있는 구간에는 쓰지 않는다.
+    네트워크 호출처럼 오래 걸릴 수 있는 구간에는 쓰지 않는다. (그 호출이 전체 시간 한도로 끊기지 않게 되므로)
     """
     if not hasattr(signal, "pthread_sigmask") or threading.current_thread() is not threading.main_thread():
         yield
@@ -102,18 +102,22 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
         if time.monotonic() >= deadline:  # 명령(/add 검증 등)이 오래 걸려도 체크포인트·전송 시간을 남긴다
             log("명령 처리 시간 한도에 도달해 나머지 명령은 다음 실행에서 처리합니다.")
             break
-        # offset 전진·명령 적용·응답 적재는 한 덩어리로 끝나야 한다. 중간에 끊기면 offset만 넘어가 명령이 사라지거나,
-        # 명령은 적용됐는데 offset이 안 넘어가 /remove 같은 명령이 재실행된다. (/add 검증의 네트워크는 URL당 최대 ~50초)
+        msg = upd.get("message") or {}
+        chat_id = str((msg.get("chat") or {}).get("id", ""))
+        text = msg.get("text") or ""
+        is_owner = chat_id == owner_chat_id
+        # 1) 네트워크가 필요한 검증(/add·/edit url의 피드 가져오기)은 상태를 바꾸는 구간 밖에서 먼저 한다.
+        #    여기는 시간 한도 신호로 끊을 수 있다. 끊겨도 아직 아무것도 바꾸지 않았으니 명령은 다음 실행에서 다시 처리된다.
+        prefetched = commands.prefetch(text) if is_owner else {}
+        # 2) offset 전진·명령 적용·응답 적재는 한 덩어리로 끝나야 한다. 중간에 끊기면 offset만 넘어가 명령이 사라지거나,
+        #    명령은 적용됐는데 offset이 안 넘어가 /remove 같은 명령이 재실행된다. 네트워크가 없어 보류해도 순간이다.
         with _defer_timeout():
             store.state["update_offset"] = upd["update_id"] + 1
-            msg = upd.get("message") or {}
-            chat_id = str((msg.get("chat") or {}).get("id", ""))
-            text = msg.get("text") or ""
-            if chat_id != owner_chat_id:
+            if not is_owner:
                 log(f"무시: 허용되지 않은 채팅의 메시지 (update {upd['update_id']})")
                 continue
             try:
-                reply = commands.handle(text, store)
+                reply = commands.handle(text, store, prefetched)
             except Exception as e:  # 한 명령의 오류가 전체 실행을 막지 않도록
                 log(f"명령 처리 오류: {type(e).__name__}: {e}")
                 reply = "명령을 처리하다 오류가 발생했습니다."

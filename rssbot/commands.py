@@ -59,6 +59,43 @@ def _reject_message(reason: str) -> str:
     return f"{reason}. 이 저장소는 공개라 구독 URL이 그대로 노출되므로, 인증 정보가 든 URL은 등록할 수 없습니다."
 
 
+def _target_url(text: str):
+    """/add <URL> 또는 /edit <번호> url <URL> 명령이 검증을 위해 가져와야 할 URL. 해당 없으면 None."""
+    parts = text.strip().split()
+    if not parts or not parts[0].startswith("/"):
+        return None
+    cmd, args = parts[0][1:].split("@", 1)[0].lower(), parts[1:]
+    if cmd == "add" and args:
+        return args[0]
+    if cmd == "edit" and len(args) >= 3 and args[1].lower() == "url":
+        return " ".join(args[2:]).strip()
+    return None
+
+
+def prefetch(text: str) -> dict:
+    """명령 검증에 필요한 피드를 미리 가져온다. 상태는 바꾸지 않는다. {url: (Feed|None, 오류|None)}
+
+    네트워크 호출은 오래 걸릴 수 있어서, 상태를 바꾸는 구간(시간 한도 신호를 보류하는 구간) 밖에서 먼저 해 두어야
+    실행 전체 시간 한도가 이 호출을 끊을 수 있다. handle()은 여기서 받은 결과를 쓴다.
+    """
+    url = _target_url(text)
+    if not url or not _valid_url(url) or unsafe_url_reason(url):
+        return {}  # handle()이 어차피 거부할 URL은 접속하지 않는다
+    try:
+        return {url: (fetch_feed(url), None)}
+    except FeedError as e:
+        return {url: (None, e)}
+
+
+def _fetch(prefetched, url: str):
+    if prefetched and url in prefetched:
+        feed, err = prefetched[url]
+        if err is not None:
+            raise err
+        return feed
+    return fetch_feed(url)
+
+
 def _pick(store: Store, token: str):
     """'번호' 인자로 구독 항목을 찾는다. (feed, 오류메시지)"""
     if not token.isdigit():
@@ -69,7 +106,7 @@ def _pick(store: Store, token: str):
     return store.items[n - 1], None
 
 
-def cmd_list(store: Store, args: list) -> str:
+def cmd_list(store: Store, args: list, prefetched=None) -> str:
     if not store.items:
         return "구독 중인 RSS가 없습니다. /add <URL> 로 추가해 보세요."
     lines = ["구독 중인 RSS"]
@@ -78,7 +115,7 @@ def cmd_list(store: Store, args: list) -> str:
     return "\n".join(lines)
 
 
-def cmd_add(store: Store, args: list) -> str:
+def cmd_add(store: Store, args: list, prefetched=None) -> str:
     if not args:
         return "사용법: /add <URL> [이름]"
     url, name = args[0], " ".join(args[1:]).strip()
@@ -92,14 +129,14 @@ def cmd_add(store: Store, args: list) -> str:
     if any(f["url"] == url for f in store.items):
         return "이미 구독 중인 URL입니다."
     try:
-        feed = fetch_feed(url)
+        feed = _fetch(prefetched, url)
     except FeedError as e:
         return f"RSS를 확인하지 못했습니다: {redact(e)}"
     added = store.add(name or feed.title or url, url, [e.id for e in feed.entries])
     return f"추가했습니다: {len(store.items)}. {added['name']}\n기존 글 {len(feed.entries)}건은 알리지 않고, 이후 새 글부터 알려드립니다."
 
 
-def cmd_edit(store: Store, args: list) -> str:
+def cmd_edit(store: Store, args: list, prefetched=None) -> str:
     if len(args) < 3 or args[1].lower() not in ("name", "url"):
         return "사용법: /edit <번호> name <새 이름>  또는  /edit <번호> url <새 URL>"
     target, err = _pick(store, args[0])
@@ -117,7 +154,7 @@ def cmd_edit(store: Store, args: list) -> str:
     if any(f["url"] == value and f is not target for f in store.items):
         return "이미 구독 중인 URL입니다."
     try:
-        feed = fetch_feed(value)
+        feed = _fetch(prefetched, value)
     except FeedError as e:
         return f"RSS를 확인하지 못했습니다: {redact(e)}"
     target["url"] = value
@@ -125,7 +162,7 @@ def cmd_edit(store: Store, args: list) -> str:
     return f"주소를 바꿨습니다: {target['name']}\n새 주소의 기존 글 {len(feed.entries)}건은 알리지 않습니다."
 
 
-def cmd_remove(store: Store, args: list) -> str:
+def cmd_remove(store: Store, args: list, prefetched=None) -> str:
     if len(args) != 1:
         return "사용법: /remove <번호>"
     target, err = _pick(store, args[0])
@@ -144,8 +181,8 @@ HANDLERS = {
 }
 
 
-def handle(text: str, store: Store) -> str | None:
-    """명령 메시지를 처리해 응답을 돌려준다. 명령이 아니면 None."""
+def handle(text: str, store: Store, prefetched: dict | None = None) -> str | None:
+    """명령 메시지를 처리해 응답을 돌려준다. 명령이 아니면 None. prefetched는 prefetch()의 결과(없으면 직접 가져옴)."""
     parts = text.strip().split()
     if not parts or not parts[0].startswith("/"):
         return None
@@ -155,4 +192,4 @@ def handle(text: str, store: Store) -> str | None:
     fn = HANDLERS.get(cmd)
     if fn is None:
         return "알 수 없는 명령입니다. /help 를 확인해 주세요."
-    return fn(store, parts[1:])
+    return fn(store, parts[1:], prefetched)

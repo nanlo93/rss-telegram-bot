@@ -72,6 +72,33 @@ class LinkAndBodyLimitTests(unittest.TestCase):
         self.assertEqual(clean_link("https://ex.com/a?id=1&page=2"), "https://ex.com/a?id=1&page=2")  # 무해한 링크는 그대로
         self.assertEqual(clean_link("http://[::1/bad"), "")  # 해석할 수 없는 URL
 
+    def test_entry_ids_with_secrets_are_hashed_and_others_are_left_untouched(self):
+        """seen·pending(공개 상태 파일)에 기록되는 글 ID에 토큰·세션 ID가 그대로 실리면 안 된다."""
+        from rssbot.feed import clean_id
+        # 이미 기록된 일반 ID는 그대로여야 이전 상태와 일치한다 (재알림 방지)
+        for plain in ("https://news.hada.io/topic?id=37394", "tag:ex.com,2026:post/1", "urn:uuid:123",
+                      "https://ex.com/post#123", "https://ex.com/post#124", "https://ex.com/p?id=1&page=2"):
+            self.assertEqual(clean_id(plain), plain)
+        for secret in ("https://ex.com/p?id=1&token=abc", "https://u:pw@ex.com/p", "https://ex.com/a;jsessionid=abc/b",
+                       "https://ex.com/p#access_token=zzz", "https://ex.com/p?x=1;sig=abc", "http://[::1/bad"):
+            cid = clean_id(secret)
+            self.assertTrue(cid.startswith("sha1:"), secret)
+            self.assertNotIn("abc", cid)
+            self.assertNotIn("pw", cid)
+            self.assertEqual(cid, clean_id(secret))  # 같은 ID는 항상 같은 값 (중복 판별용)
+        self.assertNotEqual(clean_id("https://ex.com/p?token=1"), clean_id("https://ex.com/p?token=2"))
+
+    def test_parsed_entry_ids_never_carry_secrets(self):
+        xml = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
+        <item><title>A</title><link>https://ex.com/a?id=1&amp;token=SECRET</link><guid>https://ex.com/a?id=1&amp;token=SECRET</guid></item>
+        <item><title>B</title><link>https://ex.com/b;jsessionid=SECRET/x</link></item>
+        <item><title>C</title><link>https://ex.com/c?id=3</link></item></channel></rss>"""
+        f = parse_feed(xml)
+        for e in f.entries:
+            self.assertNotIn("SECRET", e.id)
+            self.assertNotIn("SECRET", e.link)
+        self.assertEqual(f.entries[2].id, "https://ex.com/c?id=3")  # 무해한 ID는 그대로
+
     def test_clean_link_and_detection_cover_every_path_segment(self):
         self.assertEqual(clean_link("https://ex.com/a;jsessionid=abc/b/c;x=1/d?id=1"), "https://ex.com/a/b/c/d?id=1")
         from rssbot.feed import find_secret_param

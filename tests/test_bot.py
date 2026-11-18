@@ -653,9 +653,9 @@ class RunTests(unittest.TestCase):
         block = threading.Event()
         self.addCleanup(block.set)
 
-        def slow_handle(text, store):
+        def slow_handle(text, store, prefetched=None):
             block.wait(1.6)  # 한도(1초)가 이 안에서 도래
-            return real_handle(text, store)
+            return real_handle(text, store, prefetched)
 
         tg = FakeTG(updates=[msg(5, "/remove 1")])
         with mock.patch("rssbot.main.commands.handle", side_effect=slow_handle), \
@@ -689,6 +689,43 @@ class RunTests(unittest.TestCase):
         tg = FakeTG()
         self.run_bot(tg, feed_of("2", "1"))  # 다음 실행에서 정상 전달
         self.assertEqual(len([1 for _, t, _ in tg.sent if "title-2" in t]), 1)
+
+    def test_hard_limit_interrupts_feed_validation_and_command_is_retried(self):
+        """/add 검증의 네트워크 호출은 시간 한도로 끊을 수 있어야 하고, 끊겨도 명령은 다음 실행에서 처리된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        block = threading.Event()
+        self.addCleanup(block.set)
+        slow = mock.Mock(side_effect=lambda url: (block.wait(30), feed_of("9"))[1])
+        tg = FakeTG(updates=[msg(5, "/add https://slow.example/rss 새피드")])
+        started = time.monotonic()
+        with mock.patch("rssbot.commands.fetch_feed", slow), mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, tg, hard_limit=1)
+        self.assertFalse(ok)
+        self.assertLess(time.monotonic() - started, 6)  # 30초짜리 검증이 한도에서 끊김
+        st = Store(self.tmp.name)
+        self.assertEqual([f["name"] for f in st.items], ["GN"])  # 아무것도 바뀌지 않았고
+        self.assertEqual(st.state["update_offset"], 0)  # offset도 그대로라 명령은 다음 실행에서 다시 처리됨
+
+        tg2 = FakeTG(updates=[msg(5, "/add https://slow.example/rss 새피드")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=feed_of("9")), mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            main.run(self.tmp.name, "tok", OWNER, tg2)
+        self.assertEqual([f["name"] for f in Store(self.tmp.name).items], ["GN", "새피드"])
+        self.assertEqual(len([1 for _, t, _ in tg2.sent if "추가했습니다" in t]), 1)
+
+    def test_prefetched_result_is_used_and_rejected_urls_are_never_contacted(self):
+        feed = feed_of("a", "b")
+        with mock.patch("rssbot.commands.fetch_feed", side_effect=AssertionError("다시 가져오면 안 됨")):
+            tmp = tempfile.TemporaryDirectory()
+            self.addCleanup(tmp.cleanup)
+            store = Store(tmp.name)
+            r = commands.handle("/add https://ex.com/rss 이름", store, {"https://ex.com/rss": (feed, None)})
+            self.assertIn("추가했습니다", r)
+            r2 = commands.handle("/add https://ex2.com/rss", store, {"https://ex2.com/rss": (None, FeedError("HTTP 404 응답"))})
+            self.assertIn("HTTP 404", r2)
+            self.assertEqual(len(store.items), 1)
+        with mock.patch("rssbot.commands.fetch_feed", side_effect=AssertionError("접속하면 안 됨")):
+            for bad in ("/add ftp://x", "/add https://ex.com/rss?token=1", "/add", "/list", "그냥 글", "/edit 1 name 새이름"):
+                self.assertEqual(commands.prefetch(bad), {}, bad)
 
     def test_hard_limit_is_not_swallowed_by_except_exception(self):
         self.assertFalse(issubclass(main.RunTimeout, Exception))
