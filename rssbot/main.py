@@ -136,11 +136,22 @@ def _queue_item(e: Entry) -> dict:
     return {"id": e.id, "title": e.title, "link": e.link}
 
 
+_URL_ID_RE = re.compile(r"^(?:[a-z][a-z0-9+.\-]*:)?//([^/?#]*)(.*)$", re.IGNORECASE | re.DOTALL)
+
+
 def _norm_id(raw: str) -> str:
-    """글 ID를 '같은 글인가' 비교용으로 정규화한다: 스킴, 앞의 www., 끝 슬래시, 대소문자 차이를 무시한다."""
-    s = re.sub(r"^[a-z][a-z0-9+.\-]*://", "", raw.strip().lower())
-    s = re.sub(r"^www\.", "", s)
-    return s.rstrip("/")
+    """글 ID를 '같은 글인가' 비교용으로 정규화한다: 스킴, 앞의 www., 끝 슬래시, **호스트**의 대소문자 차이를 무시한다.
+
+    경로·쿼리·그 밖의 ID(tag:, urn:, yt:video: 등)는 대소문자를 구별한다. 서버와 ID 체계에 따라 경로의 대소문자는 서로
+    다른 글을 뜻할 수 있는데(짧은 링크, base64 계열 ID, 영상 ID), 통째로 소문자로 바꾸면 새 글이 이미 본 글로 오인돼
+    알림이 사라진다.
+    """
+    s = raw.strip()
+    m = _URL_ID_RE.match(s)
+    if not m:
+        return s.rstrip("/")
+    host = re.sub(r"^www\.", "", m.group(1).lower())  # 호스트 이름만 대소문자 무관 (RFC 3986)
+    return (host + m.group(2)).rstrip("/")
 
 
 def _persist_pending(store: Store, fid: str, items: list) -> None:

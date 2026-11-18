@@ -939,6 +939,27 @@ class RunTests(unittest.TestCase):
         self.assertIn("글3", texts[0])
         self.assertEqual(len(self.state()["seen"]["1"]), 5)  # 이후 비교는 새 ID로 이어지도록 기록은 합침
 
+    def test_norm_id_ignores_scheme_www_slash_and_host_case_but_keeps_path_case(self):
+        n = main._norm_id
+        self.assertEqual(n("http://WWW.Ex.com/P/AbC/"), n("https://ex.com/P/AbC"))  # 스킴·www·호스트 대소문자·끝 슬래시
+        self.assertEqual(n("//EX.com/p"), n("https://ex.com/p"))
+        self.assertNotEqual(n("https://ex.com/p/abc"), n("https://ex.com/p/ABC"))  # 경로 대소문자는 다른 글
+        self.assertNotEqual(n("https://ex.com/p?v=aBc"), n("https://ex.com/p?v=abc"))  # 쿼리도 마찬가지
+        self.assertNotEqual(n("yt:video:AbCdEf"), n("yt:video:abcdef"))  # 비 URL ID도 구별
+        self.assertNotEqual(n("tag:ex.com,2026:Post/1"), n("tag:ex.com,2026:post/1"))
+
+    def test_url_change_notifies_new_post_whose_id_differs_only_by_path_case(self):
+        old = Feed("T", [Entry(id="https://ex.com/p/abc", title="소문자 글", link="https://ex.com/p/abc")])
+        new = Feed("T", [Entry(id="https://ex.com/p/ABC", title="대문자 새 글", link="https://ex.com/p/ABC"),
+                         Entry(id="https://ex.com/p/abc", title="소문자 글", link="https://ex.com/p/abc")])
+        self.run_bot(FakeTG(), old)
+        tg = FakeTG(updates=[msg(5, "/edit 1 url https://mirror.example/rss")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=new), mock.patch("rssbot.main.fetch_feed", return_value=new):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        texts = [t for _, t, is_html in tg.sent if is_html]
+        self.assertEqual(len(texts), 1)
+        self.assertIn("대문자 새 글", texts[0])  # 경로 대소문자만 다른 새 글도 알림
+
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
             json.dump({"next_id": 3, "feeds": [
