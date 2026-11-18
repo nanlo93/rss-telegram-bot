@@ -69,8 +69,8 @@ class Telegram:
                 continue
             raise TelegramError(f"{method}: {payload.get('description', payload)}", permanent=is_content_error(payload.get("error_code"), payload.get("description", "")))
 
-    def get_updates(self, offset: int) -> list:
-        return self._call("getUpdates", {"offset": offset, "timeout": 0, "allowed_updates": ["message"]})
+    def get_updates(self, offset: int, limit: int = 100) -> list:
+        return self._call("getUpdates", {"offset": offset, "limit": limit, "timeout": 0, "allowed_updates": ["message"]})
 
     def send_message(self, chat_id, text: str, html: bool = False) -> None:
         params = {"chat_id": chat_id, "text": text[:4096]}

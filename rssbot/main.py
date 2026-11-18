@@ -11,6 +11,7 @@ import shlex
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, wait
 
 from . import commands
 from .feed import Entry, FeedError, fetch_feed
@@ -23,6 +24,9 @@ MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
 MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최대 개수
+MAX_UPDATES_PER_RUN = 25  # 한 번에 가져와 처리하는 텔레그램 명령 수 (나머지는 다음 실행에서)
+COLLECT_WORKERS = 8  # 피드를 동시에 가져오는 수
+COLLECT_BUDGET = 150  # 수집 단계 전체 시간 한도(초). 넘기면 못 가져온 피드는 이번 실행에서 건너뜀
 CHECKPOINT_TIMEOUT = 120
 
 
@@ -45,7 +49,13 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
     지정된 채팅 외의 메시지는 무시한다. 응답은 체크포인트 이후에 보내므로, 강제 종료돼도 명령이 다시 적용되지 않는다.
     """
     offset = store.state.get("update_offset", 0)
-    for upd in tg.get_updates(offset):
+    # 명령 하나는 응답 하나를 만든다. outbox 여유만큼만 가져와, 응답이 한도 때문에 버려지는 일이 없게 한다.
+    # 가져오지 않은 명령은 offset이 넘어가지 않으므로 다음 실행에서 처리된다.
+    room = MAX_OUTBOX - len(store.state["outbox"])
+    if room <= 0:
+        log("outbox가 가득 차 이번 실행에서는 새 명령을 가져오지 않습니다.")
+        return
+    for upd in tg.get_updates(offset, limit=min(room, MAX_UPDATES_PER_RUN)):
         store.state["update_offset"] = upd["update_id"] + 1
         msg = upd.get("message") or {}
         chat_id = str((msg.get("chat") or {}).get("id", ""))
@@ -75,16 +85,24 @@ def _persist_pending(store: Store, fid: str, items: list) -> None:
         store.state["pending"].pop(fid, None)
 
 
-def _collect_one(store: Store, f: dict, notices: list) -> None:
-    fid = str(f["id"])
+def _fetch_safely(url: str):
+    """스레드에서 호출: (Feed, None) 또는 (None, 오류). 어떤 예외도 밖으로 내보내지 않는다."""
     try:
-        parsed = fetch_feed(f["url"])
-    except FeedError as e:
+        return fetch_feed(url), None
+    except Exception as e:
+        return None, e
+
+
+def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
+    fid = str(f["id"])
+    parsed, error = fetched
+    if error is not None:
+        msg = str(error) if isinstance(error, FeedError) else f"예기치 못한 오류 ({type(error).__name__})"
         fails = store.state["fails"].get(fid, 0) + 1
         store.state["fails"][fid] = fails
-        log(f"[{f['name']}] 확인 실패 ({fails}회 연속): {e}")
+        log(f"[{f['name']}] 확인 실패 ({fails}회 연속): {msg}")
         if fails == FAIL_WARN_AT:
-            notices.append(f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {e}")
+            notices.append(f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {commands.redact(msg)}")
         return
     store.state["fails"].pop(fid, None)
 
@@ -116,11 +134,24 @@ def _collect_one(store: Store, f: dict, notices: list) -> None:
 
 
 def collect_feeds(store: Store) -> list:
-    """모든 구독 피드를 확인해 새 글을 pending에 기록한다. 보낼 안내 메시지 목록을 돌려준다."""
+    """모든 구독 피드를 동시에 확인해 새 글을 pending에 기록한다. 보낼 안내 메시지 목록을 돌려준다.
+
+    장애 중인 피드가 많아도 체크포인트와 전송 시간을 잡아먹지 않도록, 가져오기는 병렬로 하고 전체 시간 한도를 둔다.
+    상태 갱신은 모두 이 스레드에서 순차로 처리한다.
+    """
     notices: list = []
-    for f in store.items:
+    feeds = list(store.items)
+    if not feeds:
+        return notices
+    pool = ThreadPoolExecutor(max_workers=COLLECT_WORKERS)
+    futures = {f["id"]: pool.submit(_fetch_safely, f["url"]) for f in feeds}
+    done, _ = wait(list(futures.values()), timeout=COLLECT_BUDGET)
+    pool.shutdown(wait=False, cancel_futures=True)
+    for f in feeds:
+        fut = futures[f["id"]]
+        fetched = fut.result() if fut in done else (None, FeedError("시간 초과 (이번 실행에서는 건너뜀)"))
         try:
-            _collect_one(store, f, notices)
+            _collect_one(store, f, notices, fetched)
         except Exception as e:  # 한 피드의 예기치 못한 오류가 다른 피드 확인을 막지 않도록
             log(f"[{f['name']}] 처리 중 오류: {type(e).__name__}: {e}")
     return notices
@@ -215,10 +246,11 @@ def _checkpoint(store: Store, hook) -> bool:
         return True
     try:
         hook()
-        return True
     except Exception as e:
         log(f"체크포인트 실패: {type(e).__name__}: {e}")
         return False
+    store.reload()  # rebase로 병합돼 온 원격 변경(예: 손으로 고친 구독 이름)을 이후 save()가 덮어쓰지 않게 함
+    return True
 
 
 def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None, checkpoint=None) -> bool:

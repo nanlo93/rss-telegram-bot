@@ -3,6 +3,8 @@ import json
 import os
 import shutil
 import tempfile
+import threading
+import time
 import unittest
 import urllib.error
 from unittest import mock
@@ -23,8 +25,8 @@ class FakeTG:
     def __init__(self, updates=None, fail_sends=0):
         self.updates, self.sent, self.fail_sends, self.commands = updates or [], [], fail_sends, None
 
-    def get_updates(self, offset):
-        return [u for u in self.updates if u["update_id"] >= offset]
+    def get_updates(self, offset, limit=100):
+        return [u for u in self.updates if u["update_id"] >= offset][:limit]
 
     def send_message(self, chat_id, text, html=False):
         if self.fail_sends:
@@ -68,6 +70,23 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(self.store.items, [])
         self.assertNotIn("1", self.store.state["seen"])
         self.assertIn("없습니다", commands.handle("/list", self.store))
+
+    def test_urls_with_credentials_are_rejected_because_repo_is_public(self):
+        for bad in ("https://user:pw@ex.com/rss", "https://ex.com/rss?token=abc", "https://ex.com/rss?api_key=1",
+                    "https://ex.com/rss?Key=1", "https://ex.com/rss?x=1&auth=2"):
+            self.assertIn("등록할 수 없습니다", commands.handle(f"/add {bad}", self.store), bad)
+        self.assertEqual(self.store.items, [])
+        for ok in ("https://ex.com/rss?channel_id=UC123", "https://ex.com/feed?keyword=swift", "https://ex.com/rss"):
+            self.assertIn("추가했습니다", commands.handle(f"/add {ok}", self.store), ok)
+        self.assertIn("등록할 수 없습니다", commands.handle("/edit 1 url https://ex.com/rss?secret=1", self.store))
+
+    def test_error_replies_do_not_leak_urls(self):
+        err = FeedError("가져오기 실패: HTTP Error 302 -> https://private.example/rss?x=1 (redirect)")
+        with mock.patch("rssbot.commands.fetch_feed", side_effect=err):
+            r = commands.handle("/add https://ex.com/rss", self.store)
+        self.assertIn("확인하지 못했습니다", r)
+        self.assertNotIn("private.example", r)
+        self.assertIn("<URL>", r)
 
     def test_default_name_is_feed_title(self):
         commands.handle("/add https://ex.com/rss", self.store)
@@ -366,11 +385,60 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len(tg.sent), 1)
         self.assertEqual(self.state()["outbox"], [])
 
-    def test_outbox_is_bounded(self):
+    def test_bulk_commands_are_batched_and_no_reply_is_dropped(self):
+        """한 번에 몰린 명령은 outbox 여유만큼씩 처리해, 어떤 응답도 한도 때문에 버려지지 않는다."""
         self.run_bot(FakeTG(), feed_of("1"))
-        ups = [msg(i, "/list") for i in range(100, 100 + main.MAX_OUTBOX + 20)]
-        self.run_bot(FakeTG(updates=ups, fail_sends=9999), feed_of("1"))
+        ups = [msg(100 + i, "/list") for i in range(70)]
+        down = FakeTG(updates=ups, fail_sends=9999)
+        for _ in range(3):
+            self.run_bot(down, feed_of("1"))
         self.assertEqual(len(self.state()["outbox"]), main.MAX_OUTBOX)
+        self.assertEqual(self.state()["update_offset"], 150)  # 가득 차면 더 가져오지 않음 (offset도 그대로)
+
+        tg = FakeTG(updates=ups)
+        for _ in range(4):
+            self.run_bot(tg, feed_of("1"))
+        self.assertEqual(len(tg.sent), 70)  # 70개 명령 모두 응답됨
+        self.assertEqual(self.state()["outbox"], [])
+
+    def test_remote_edit_merged_by_checkpoint_is_not_reverted(self):
+        """체크포인트(rebase)로 병합돼 온 원격 변경을 이후 save()가 되돌리면 안 된다."""
+        feeds_path = os.path.join(self.tmp.name, "feeds.json")
+
+        def hook():  # 원격에서 구독 이름을 고친 변경이 rebase로 병합돼 들어온 상황
+            with open(feeds_path) as f:
+                d = json.load(f)
+            d["feeds"][0]["name"] = "REMOTE-EDIT"
+            with open(feeds_path, "w") as f:
+                json.dump(d, f)
+
+        self.run_bot(FakeTG(), feed_of("1"))
+        with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
+            main.run(self.tmp.name, "tok", OWNER, FakeTG(), checkpoint=hook)
+        self.assertEqual(Store(self.tmp.name).items[0]["name"], "REMOTE-EDIT")
+
+    def test_slow_feeds_do_not_consume_delivery_time(self):
+        with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
+            json.dump({"next_id": 3, "feeds": [
+                {"id": 1, "name": "SLOW", "url": "https://slow/rss"},
+                {"id": 2, "name": "FAST", "url": "https://fast/rss"}]}, f)
+        self.run_bot(FakeTG(), feed_of("1"))  # 두 피드 모두 기준선
+
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        def fetch(url):
+            if "slow" in url:
+                release.wait(10)  # 응답하지 않는 피드
+            return feed_of("2", "1")
+
+        tg = FakeTG()
+        started = time.monotonic()
+        with mock.patch("rssbot.main.fetch_feed", side_effect=fetch), mock.patch("rssbot.main.COLLECT_BUDGET", 0.3):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        self.assertLess(time.monotonic() - started, 5)  # 느린 피드를 기다리지 않고 진행
+        self.assertEqual([t for _, t, _ in tg.sent if "FAST" in t].__len__(), 1)  # 정상 피드 알림은 전달
+        self.assertEqual(self.state()["fails"]["1"], 1)  # 느린 피드는 실패로 집계
 
     def test_collect_checkpoint_failure_still_delivers_but_reports_failure(self):
         self.run_bot(FakeTG(), feed_of("1"))

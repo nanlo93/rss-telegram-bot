@@ -33,6 +33,14 @@ class Store:
         self.feeds_path = os.path.join(data_dir, "feeds.json")
         self.state_path = os.path.join(data_dir, "state.json")
         os.makedirs(data_dir, exist_ok=True)
+        self.reload()
+
+    def reload(self) -> None:
+        """디스크의 feeds.json·state.json을 다시 읽는다.
+
+        체크포인트의 `git pull --rebase`가 원격에서 바뀐 파일을 병합해 오는 경우가 있다.
+        메모리 상태를 그대로 두면 다음 save()가 그 변경을 되돌리므로, 체크포인트 직후 병합된 내용을 다시 읽는다.
+        """
         self.feeds = _load(self.feeds_path, {"next_id": 1, "feeds": []})
         self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "dropped": {}, "fails": {}, "commands_v": 0, "outbox": []})
         for key, default in (("seen", {}), ("pending", {}), ("dropped", {}), ("fails", {}), ("outbox", [])):

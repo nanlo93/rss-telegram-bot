@@ -1,18 +1,32 @@
 #!/usr/bin/env bash
-# data/ 의 변경분을 커밋하고 원격에 푸시한다.
+# 봇 상태 디렉터리(기본 data/, DATA_DIR로 지정 가능)의 변경분을 커밋하고 원격에 푸시한다.
 # - 변경이 없고 푸시할 커밋도 없으면 아무것도 하지 않는다.
 # - 이전 시도에서 커밋만 되고 푸시되지 못한 커밋도 함께 푸시한다.
+# - 상태 디렉터리만 커밋한다. (다른 파일이 이미 스테이징돼 있어도 포함하지 않음)
+# - DATA_DIR이 저장소 밖이면 저장할 수 없으므로 비정상 종료한다.
 # - 푸시가 끝내 실패하면 비정상 종료(1)해 호출자가 실패를 알 수 있게 한다.
 # 봇이 체크포인트(write-ahead)마다 호출하고, 워크플로의 마지막 단계에서도 호출한다.
 set -euo pipefail
 
-cd "$(git rev-parse --show-toplevel)"
+top="$(cd "$(git rev-parse --show-toplevel)" && pwd -P)"
+cd "$top"
 
-if [ -n "$(git status --porcelain -- data)" ]; then
+data_dir="${DATA_DIR:-data}"
+mkdir -p "$data_dir"
+abs="$(cd "$data_dir" && pwd -P)"
+case "$abs/" in
+  "$top"/?*) rel="${abs#"$top"/}" ;;
+  *)
+    echo "DATA_DIR($abs)이 저장소($top) 안의 하위 디렉터리가 아니라 커밋할 수 없습니다." >&2
+    exit 1
+    ;;
+esac
+
+if [ -n "$(git status --porcelain -- "$rel")" ]; then
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  git add -- data
-  git commit -q -m "chore: 구독 상태 갱신"
+  git add -- "$rel"
+  git commit -q -m "chore: 구독 상태 갱신" -- "$rel"
 fi
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -23,7 +37,8 @@ if git rev-parse -q --verify '@{u}' >/dev/null 2>&1 && [ "$(git rev-list --count
 fi
 
 for attempt in 1 2 3; do
-  if git pull -q --rebase origin "$branch" && git push -q origin "HEAD:$branch"; then
+  # --autostash: 로컬에서 실행할 때 작업 트리에 다른 변경이 있어도 rebase가 막히지 않게 함 (상태 외 파일은 건드리지 않고 복원)
+  if git pull -q --rebase --autostash origin "$branch" && git push -q origin "HEAD:$branch"; then
     exit 0
   fi
   git rebase --abort >/dev/null 2>&1 || true

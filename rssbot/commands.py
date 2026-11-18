@@ -1,7 +1,8 @@
 """텔레그램 명령어(/list /add /edit /remove) 처리. 응답 문자열을 돌려준다."""
 from __future__ import annotations
 
-from urllib.parse import urlparse
+import re
+from urllib.parse import parse_qsl, urlparse
 
 from .feed import FeedError, fetch_feed
 from .store import Store
@@ -32,6 +33,33 @@ def _valid_url(url: str) -> bool:
     return p.scheme in ("http", "https") and bool(p.netloc)
 
 
+_URL_RE = re.compile(r"https?://\S+")
+_SECRET_PARAM_SUFFIXES = ("token", "secret", "password", "passwd", "apikey", "api_key", "key", "auth", "sig", "signature", "session")
+
+
+def redact(text) -> str:
+    """오류 문구에서 URL을 지운다. 응답은 상태 파일(outbox)에 기록되어 공개 저장소에 커밋되기 때문."""
+    return _URL_RE.sub("<URL>", str(text))
+
+
+def unsafe_url_reason(url: str):
+    """URL에 인증 정보가 들어 있어 보이면 이유를, 아니면 None을 돌려준다.
+
+    구독 목록(data/feeds.json)은 공개 저장소에 그대로 커밋되므로, 비밀 토큰이 든 URL은 등록하지 않는다.
+    """
+    p = urlparse(url)
+    if p.username or p.password:
+        return "URL에 아이디·비밀번호가 들어 있습니다"
+    for key, _ in parse_qsl(p.query, keep_blank_values=True):
+        if key.lower().endswith(_SECRET_PARAM_SUFFIXES):
+            return f"URL의 '{key}' 값이 인증 정보로 보입니다"
+    return None
+
+
+def _reject_message(reason: str) -> str:
+    return f"{reason}. 이 저장소는 공개라 구독 URL이 그대로 노출되므로, 인증 정보가 든 URL은 등록할 수 없습니다."
+
+
 def _pick(store: Store, token: str):
     """'번호' 인자로 구독 항목을 찾는다. (feed, 오류메시지)"""
     if not token.isdigit():
@@ -57,6 +85,9 @@ def cmd_add(store: Store, args: list) -> str:
     url, name = args[0], " ".join(args[1:]).strip()
     if not _valid_url(url):
         return "http:// 또는 https:// 로 시작하는 URL을 입력해 주세요."
+    reason = unsafe_url_reason(url)
+    if reason:
+        return _reject_message(reason)
     if len(store.items) >= MAX_FEEDS:
         return f"구독은 최대 {MAX_FEEDS}개까지 가능합니다."
     if any(f["url"] == url for f in store.items):
@@ -64,7 +95,7 @@ def cmd_add(store: Store, args: list) -> str:
     try:
         feed = fetch_feed(url)
     except FeedError as e:
-        return f"RSS를 확인하지 못했습니다: {e}"
+        return f"RSS를 확인하지 못했습니다: {redact(e)}"
     added = store.add(name or feed.title or url, url, [e.id for e in feed.entries])
     return f"추가했습니다: {len(store.items)}. {added['name']}\n기존 글 {len(feed.entries)}건은 알리지 않고, 이후 새 글부터 알려드립니다."
 
@@ -81,12 +112,15 @@ def cmd_edit(store: Store, args: list) -> str:
         return f"이름을 '{value}'(으)로 바꿨습니다."
     if not _valid_url(value):
         return "http:// 또는 https:// 로 시작하는 URL을 입력해 주세요."
+    reason = unsafe_url_reason(value)
+    if reason:
+        return _reject_message(reason)
     if any(f["url"] == value and f is not target for f in store.items):
         return "이미 구독 중인 URL입니다."
     try:
         feed = fetch_feed(value)
     except FeedError as e:
-        return f"RSS를 확인하지 못했습니다: {e}"
+        return f"RSS를 확인하지 못했습니다: {redact(e)}"
     target["url"] = value
     store.reset_seen(target, [e.id for e in feed.entries])
     return f"주소를 바꿨습니다: {target['name']}\n새 주소의 기존 글 {len(feed.entries)}건은 알리지 않습니다."
