@@ -95,6 +95,41 @@ class CommandTests(unittest.TestCase):
         for s in ("HTTPS://X.example/?a=1", "see ftp://x.example/y now", "Http://x.example"):
             self.assertNotIn("example", commands.redact(s))
 
+    def test_url_change_keeps_unsent_alerts(self):
+        """번호가 밀려 엉뚱한 구독에 적용되더라도 미전송 알림이 사라지면 되돌릴 수 없다."""
+        commands.handle("/add https://ex.com/rss 내 블로그", self.store)
+        fid = str(self.store.items[0]["id"])
+        self.store.state["pending"][fid] = [{"id": "x", "title": "미전송", "link": "https://ex.com/x"}]
+        self.store.state["dropped"][fid] = 3
+        r = commands.handle("/edit 1 url https://ex.com/new", self.store)
+        self.assertIn("이전: https://ex.com/rss", r)
+        self.assertEqual([p["id"] for p in self.store.state["pending"][fid]], ["x"])
+        self.assertEqual(self.store.state["dropped"][fid], 3)
+
+    def test_edit_to_same_url_is_noop_and_does_not_swallow_new_posts(self):
+        commands.handle("/add https://ex.com/rss", self.store)
+        fid = str(self.store.items[0]["id"])
+        self.store.state["seen"][fid] = ["old"]  # 아직 새 글(a, b)을 수집하기 전의 기준선
+        with mock.patch("rssbot.commands.fetch_feed", side_effect=AssertionError("접속하면 안 됨")):
+            r = commands.handle("/edit 1 url https://ex.com/rss", self.store)
+        self.assertIn("이미 이 주소", r)
+        self.assertEqual(self.store.state["seen"][fid], ["old"])  # 기준선을 다시 잡아 새 글을 삼키지 않음
+
+    def test_failed_edit_names_the_target_and_asks_to_check_list_before_resending(self):
+        commands.handle("/add https://ex.com/rss 첫째", self.store)
+        commands.handle("/add https://ex2.com/rss 둘째", self.store)
+        r = commands.handle("/edit 2 url https://ex.com/new", self.store, {})  # 사전 검증 실패 상황
+        self.assertIn("2번 '둘째'", r)
+        self.assertIn("/list", r)
+        self.assertEqual([f["url"] for f in self.store.items], ["https://ex.com/rss", "https://ex2.com/rss"])
+
+    def test_replies_echo_target_and_old_values_so_mistakes_are_noticeable(self):
+        commands.handle("/add https://ex.com/rss 첫째", self.store)
+        self.assertIn("'첫째'에서 '새이름'", commands.handle("/edit 1 name 새이름", self.store))
+        r = commands.handle("/remove 1", self.store)
+        self.assertIn("새이름", r)
+        self.assertIn("https://ex.com/rss", r)
+
     def test_default_name_is_feed_title(self):
         commands.handle("/add https://ex.com/rss", self.store)
         self.assertEqual(self.store.items[0]["name"], "Fetched")

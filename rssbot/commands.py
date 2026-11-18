@@ -25,6 +25,8 @@ HELP = """RSS Pinger 사용법
 /edit <번호> url <새 URL> — 주소 변경
 /remove <번호> — 구독 삭제
 
+번호는 /list 기준이며 구독을 삭제하면 뒤의 번호가 당겨집니다. /edit·/remove 는 보내기 전에 /list 로 번호를 확인하세요.
+
 새 글 확인과 명령 처리는 최대 몇 분 간격으로 이루어져서, 답장이 바로 오지 않을 수 있습니다."""
 
 
@@ -163,9 +165,10 @@ def cmd_edit(store: Store, args: list, prefetched=None) -> str:
     if err:
         return err
     field, value = args[1].lower(), " ".join(args[2:]).strip()
+    number = store.items.index(target) + 1
     if field == "name":
-        target["name"] = value
-        return f"이름을 '{value}'(으)로 바꿨습니다."
+        old_name, target["name"] = target["name"], value
+        return f"{number}번 이름을 '{old_name}'에서 '{value}'(으)로 바꿨습니다."
     if not _valid_url(value):
         return "http:// 또는 https:// 로 시작하는 URL을 입력해 주세요."
     reason = unsafe_url_reason(value)
@@ -173,13 +176,20 @@ def cmd_edit(store: Store, args: list, prefetched=None) -> str:
         return _reject_message(reason)
     if any(f["url"] == value and f is not target for f in store.items):
         return "이미 구독 중인 URL입니다."
+    if target["url"] == value:
+        # 같은 주소로의 변경은 아무것도 하지 않는다. 기준선을 다시 잡으면 아직 알리지 못한 새 글을 삼킨다.
+        return f"{number}번 '{target['name']}'은(는) 이미 이 주소를 구독 중입니다."
     try:
         feed = _fetch(prefetched, value)
     except FeedError as e:
-        return f"RSS를 확인하지 못했습니다: {redact(e)}"
-    target["url"] = value
+        # 구독 번호는 목록이 바뀌면 달라진다. 안내대로 다시 보냈을 때 다른 구독에 적용되지 않도록 대상을 보여주고 확인을 권한다.
+        return (f"{number}번 '{target['name']}'의 주소를 바꾸지 못했습니다: {redact(e)}\n"
+                "구독 번호는 목록이 바뀌면 달라질 수 있으니, 다시 보내기 전에 /list 로 번호를 확인해 주세요.")
+    old_url, target["url"] = target["url"], value
     store.reset_seen(target, [e.id for e in feed.entries])
-    return f"주소를 바꿨습니다: {target['name']}\n새 주소의 기존 글 {len(feed.entries)}건은 알리지 않습니다."
+    return (f"{number}번 '{target['name']}'의 주소를 바꿨습니다.\n이전: {old_url}\n"
+            f"새 주소의 기존 글 {len(feed.entries)}건은 알리지 않고, 아직 알리지 못한 글은 그대로 전달합니다.\n"
+            "잘못 바꿨다면 이전 주소로 /edit 를 다시 보내 주세요.")
 
 
 def cmd_remove(store: Store, args: list, prefetched=None) -> str:
@@ -189,7 +199,7 @@ def cmd_remove(store: Store, args: list, prefetched=None) -> str:
     if err:
         return err
     store.remove(target)
-    return f"삭제했습니다: {target['name']}"
+    return f"삭제했습니다: {target['name']}\n주소: {target['url']}\n잘못 지웠다면 /add 로 다시 추가할 수 있습니다."
 
 
 HANDLERS = {

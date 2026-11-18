@@ -63,9 +63,13 @@ class Store:
             self.state[key].pop(str(feed["id"]), None)
 
     def reset_seen(self, feed: dict, seen_ids: list) -> None:
+        """주소가 바뀐 구독의 기준선(seen)을 새 피드의 현재 글로 다시 잡는다.
+
+        pending·dropped(아직 알리지 못한 글과 그 건수)는 지우지 않는다. 구독 번호로 대상을 지정하는 명령은 번호가 밀려
+        엉뚱한 구독에 적용될 수 있는데, 그때 미전송 알림까지 조용히 사라지면 되돌릴 수 없다. 이미 관측한 글이므로
+        그대로 전달하는 쪽이 안전하다.
+        """
         self.state["seen"][str(feed["id"])] = list(seen_ids)[:SEEN_LIMIT]
-        for key in ("pending", "dropped"):  # 주소가 바뀌면 이전 피드의 미전송분은 폐기
-            self.state[key].pop(str(feed["id"]), None)
         self.state["fails"].pop(str(feed["id"]), None)
 
     def save(self) -> None:
