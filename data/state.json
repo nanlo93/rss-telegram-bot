@@ -28,9 +28,5 @@
   "commands_v": 1,
   "pending": {},
   "dropped": {},
-  "outbox": [
-    {
-      "text": "구독 중인 RSS\n1. GeekNews\n   https://news.hada.io/rss/news"
-    }
-  ]
+  "outbox": []
 }
