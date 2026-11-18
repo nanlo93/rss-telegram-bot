@@ -42,7 +42,15 @@ COLLECT_BUDGET = 150  # 수집 단계 전체 시간 한도(초). 넘기면 못 �
 CHECKPOINT_TIMEOUT = 120
 
 
+_log_buffer: list | None = None  # 시간 한도 신호를 보류하는 구간(_defer_timeout) 안에서 모아 두는 로그. None이면 즉시 출력
+
+
 def log(msg: str) -> None:
+    # 보류 구간 안에서 표준 출력에 쓰면, 출력이 막혔을 때(파이프 포화 등) 쓰기가 끝날 때까지 시간 한도 신호가 계속 보류돼
+    # 전체 시간 한도가 지연된다. 그래서 구간 안의 로그는 메모리에 모았다가 구간이 끝난 뒤에 출력한다.
+    if _log_buffer is not None and threading.current_thread() is threading.main_thread():
+        _log_buffer.append(msg)
+        return
     print(msg, flush=True)
 
 
@@ -58,14 +66,28 @@ def _defer_timeout():
     pending은 아직) 반쯤 바뀐 상태가 저장돼 글이나 명령이 영영 사라진다. 상태를 바꾸는 구간은 이 블록으로 감싸 원자적으로 만든다.
     네트워크 호출처럼 오래 걸릴 수 있는 구간에는 쓰지 않는다. (그 호출이 전체 시간 한도로 끊기지 않게 되므로)
     """
+    global _log_buffer
     if not hasattr(signal, "pthread_sigmask") or threading.current_thread() is not threading.main_thread():
         yield
         return
+    owns_buffer = _log_buffer is None  # 중첩이면 바깥 구간의 버퍼를 그대로 쓴다
+    if owns_buffer:
+        _log_buffer = []
     old = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
     try:
         yield
     finally:
-        signal.pthread_sigmask(signal.SIG_SETMASK, old)  # 보류된 신호는 여기서 전달된다 (블록 안의 변경은 모두 끝난 뒤)
+        try:
+            signal.pthread_sigmask(signal.SIG_SETMASK, old)  # 보류된 신호는 여기서 전달된다 (블록 안의 변경은 모두 끝난 뒤)
+        except BaseException:
+            # 보류된 시간 한도 신호가 RunTimeout으로 도착했다. 한도를 넘겼으니 모아 둔 로그를 출력하느라 더 지체하지 않고 버린다.
+            if owns_buffer:
+                _log_buffer = None
+            raise
+        if owns_buffer:
+            buffered, _log_buffer = _log_buffer, None
+            for line in buffered:
+                print(line, flush=True)
 
 
 # ---------- 1단계: 텔레그램 명령 적용 ----------

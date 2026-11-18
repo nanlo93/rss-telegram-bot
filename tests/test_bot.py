@@ -1,7 +1,9 @@
+import contextlib
 import io
 import json
 import os
 import shutil
+import signal
 import tempfile
 import threading
 import time
@@ -540,6 +542,44 @@ class RunTests(unittest.TestCase):
         for _ in range(2):
             self.run_bot(tg, feed_of("1"))
         self.assertEqual(len([1 for _, t, _ in tg.sent if "4건" in t]), 1)
+
+    def test_logs_inside_deferred_section_are_held_until_it_ends(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            with main._defer_timeout():
+                main.log("구간 안")
+                with main._defer_timeout():  # 중첩돼도 바깥 버퍼를 쓴다
+                    main.log("중첩 안")
+                self.assertEqual(buf.getvalue(), "")  # 구간 안에서는 출력하지 않음
+            self.assertEqual(buf.getvalue(), "구간 안\n중첩 안\n")  # 끝나면 순서대로 출력
+            main.log("구간 밖")
+        self.assertTrue(buf.getvalue().endswith("구간 밖\n"))  # 구간 밖은 즉시 출력
+
+    def test_blocked_stdout_inside_deferred_section_does_not_delay_time_limit(self):
+        """보류 구간 안의 로그가 막힌 표준 출력에 쓰면, 쓰기가 끝날 때까지 시간 한도가 지연된다."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        printed = []
+
+        def blocking_print(*args, **kwargs):
+            printed.append(args)
+            release.wait(5)  # 막힌 표준 출력
+
+        def on_alarm(signum, frame):
+            raise main.RunTimeout()
+
+        old_handler = signal.signal(signal.SIGALRM, on_alarm)
+        self.addCleanup(signal.signal, signal.SIGALRM, old_handler)
+        self.addCleanup(signal.alarm, 0)
+        started = time.monotonic()
+        with mock.patch("builtins.print", blocking_print):
+            signal.alarm(1)
+            with self.assertRaises(main.RunTimeout):
+                with main._defer_timeout():
+                    main.log("보류 구간 안의 로그")  # 즉시 출력했다면 여기서 5초 막힘
+                    release.wait(1.5)  # 구간 안에서 한도(1초)가 도래 -> 끝날 때 RunTimeout
+        self.assertLess(time.monotonic() - started, 3)
+        self.assertEqual(printed, [])  # 한도가 지난 뒤에는 모아 둔 로그를 출력하느라 지체하지 않음
 
     def test_lost_record_is_cleaned_when_feed_is_removed(self):
         with tempfile.TemporaryDirectory() as d:
