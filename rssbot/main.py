@@ -31,6 +31,7 @@ MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
 MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최대 개수
+NOTICE_QUOTA = 5  # 그중 부가 안내(누락 안내·경고)가 차지할 수 있는 자리. 명령 응답에는 나머지(MAX_OUTBOX - NOTICE_QUOTA)가 보장된다
 MAX_UPDATES_PER_RUN = 25  # 한 번에 가져와 처리하는 텔레그램 명령 수 (나머지는 다음 실행에서)
 COLLECT_WORKERS = commands.MAX_FEEDS  # 허용된 구독 수만큼 일꾼을 둬, 응답 없는 피드가 앞에 몰려도 뒤 피드가 굶지 않게 함 (피드마다 전용 스레드)
 PER_HOST_LIMIT = 2  # 같은 호스트로 동시에 보내는 요청 수 (몰리면 429·차단을 맞아 정상 피드가 반복 누락됨)
@@ -69,20 +70,38 @@ def _defer_timeout():
 
 # ---------- 1단계: 텔레그램 명령 적용 ----------
 
+def _notice_count(store: Store) -> int:
+    return sum(1 for e in store.state["outbox"] if e.get("kind") == "notice")
+
+
+def _enqueue_notice(store: Store, text: str) -> bool:
+    """부가 안내(누락 안내·경고)를 발송함에 적재한다. 안내 몫(NOTICE_QUOTA)이나 전체 자리가 없으면 적재하지 않고 False.
+
+    발송함의 자리는 순서가 아니라 몫으로 나눈다. 안내에 먼저 자리를 주면 새 누락이 계속 생기는 동안 명령이 굶고, 명령 응답에
+    먼저 주면 안내가 굶는다. 안내는 NOTICE_QUOTA개까지만, 명령 응답은 나머지가 보장된다.
+    """
+    box = store.state["outbox"]
+    if len(box) >= MAX_OUTBOX or _notice_count(store) >= NOTICE_QUOTA:
+        return False
+    box.append({"text": text, "kind": "notice"})
+    return True
+
+
 def _enqueue(store: Store, texts: list, droppable: bool = False) -> None:
     """보낼 메시지를 상태의 outbox에 기록한다. 전송에 성공해야 지워지므로, 체크포인트·재시작을 넘어 보존된다.
 
-    droppable=True(피드 경고 같은 부가 안내)는 자리가 없으면 새 메시지를 버린다. 이미 쌓인 명령 응답을 밀어내지 않는다.
-    (명령의 offset은 이미 확정돼 응답을 다시 만들 수 없지만, 경고는 의미가 크지 않다.)
+    droppable=True(피드 경고 같은 부가 안내)는 안내 몫이나 자리가 없으면 새 메시지를 버린다.
+    droppable=False(명령 응답)는 process_updates가 안내 몫을 뺀 여유만큼만 가져오므로 보통 자리가 있다.
     """
     box = store.state["outbox"]
     for t in texts:
         if not t:
             continue
+        if droppable:
+            if not _enqueue_notice(store, t):
+                log("발송함의 안내 자리가 없어 부가 안내를 생략합니다.")
+            continue
         if len(box) >= MAX_OUTBOX:
-            if droppable:
-                log("outbox가 가득 차 부가 안내를 생략합니다.")
-                continue
             del box[0]  # 명령 응답은 process_updates가 여유만큼만 가져오므로 보통 도달하지 않는다
         box.append({"text": t})
 
@@ -95,7 +114,9 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
     offset = store.state.get("update_offset", 0)
     # 명령 하나는 응답 하나를 만든다. outbox 여유만큼만 가져와, 응답이 한도 때문에 버려지는 일이 없게 한다.
     # 가져오지 않은 명령은 offset이 넘어가지 않으므로 다음 실행에서 처리된다.
-    room = MAX_OUTBOX - len(store.state["outbox"])
+    # 안내가 쓸 몫(아직 안 쓴 만큼)은 남겨 둔다. 그래야 명령이 쏟아져도 누락 안내가 굶지 않는다.
+    reserved = max(0, NOTICE_QUOTA - _notice_count(store))
+    room = MAX_OUTBOX - len(store.state["outbox"]) - reserved
     if room <= 0:
         log("outbox가 가득 차 이번 실행에서는 새 명령을 가져오지 않습니다.")
         return
@@ -319,9 +340,10 @@ def _fetch_all(feeds: list) -> dict:
 
 
 def _enqueue_lost(store: Store) -> None:
-    """피드에서 밀려나 알리지 못한 글의 안내를 발송함에 적재한다. 발송함에 자리가 있을 때만 적재하고 기록을 지운다.
+    """피드에서 밀려나 알리지 못한 글의 안내를 발송함에 적재한다. 안내 몫에 자리가 있을 때만 적재하고 기록을 지운다.
 
-    자리가 없으면 기록을 그대로 두어 다음 실행에서 다시 시도한다. (명령 응답을 밀어내지도, 이 안내를 버리지도 않는다)
+    자리가 없으면 기록을 그대로 두어 다음 실행에서 다시 시도한다. (명령 응답을 밀어내지도, 이 안내를 버리지도 않는다.
+    반대로 안내가 몫을 넘어 자리를 차지하지도 않으므로 명령이 굶지 않는다)
     """
     names = {str(f["id"]): f["name"] for f in store.items}
     for fid in list(store.state["lost"]):
@@ -329,10 +351,9 @@ def _enqueue_lost(store: Store) -> None:
         if fid not in names or not count:  # 구독이 삭제됐거나 의미 없는 값
             store.state["lost"].pop(fid, None)
             continue
-        if len(store.state["outbox"]) >= MAX_OUTBOX:
-            log(f"[{names[fid]}] 발송함이 가득 차 밀려난 글 {count}건의 안내를 다음 실행으로 미룹니다")
+        if not _enqueue_notice(store, f"'{names[fid]}' 대기열이 가득 차 미뤄 둔 새 글 {count}건이 피드에서 밀려나 알리지 못했습니다."):
+            log(f"[{names[fid]}] 발송함의 안내 자리가 없어 밀려난 글 {count}건의 안내를 다음 실행으로 미룹니다")
             continue
-        _enqueue(store, [f"'{names[fid]}' 대기열이 가득 차 미뤄 둔 새 글 {count}건이 피드에서 밀려나 알리지 못했습니다."])
         store.state["lost"].pop(fid, None)
 
 

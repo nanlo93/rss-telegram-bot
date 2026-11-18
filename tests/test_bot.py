@@ -412,6 +412,44 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len([t for t in sent if "밀려나 알리지 못했습니다" in t]), 1)
         self.assertEqual(len([t for t in sent if t.startswith("구독 중인 RSS")]), 3)  # 명령 응답도 모두 전달
 
+    def _many_feeds_state(self, n_feeds, replies, lost_each=2):
+        """구독 n_feeds개를 만들고(기준선 완료), 발송함에 replies개의 응답과 피드별 누락 기록을 넣는다."""
+        with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
+            json.dump({"next_id": n_feeds + 1, "feeds": [
+                {"id": i, "name": f"F{i}", "url": f"https://h{i}.example/rss"} for i in range(1, n_feeds + 1)]}, f)
+        self.run_bot(FakeTG(), feed_of("1"))
+        sp = os.path.join(self.tmp.name, "state.json")
+        with open(sp) as f:
+            s = json.load(f)
+        s["outbox"] = [{"text": f"응답 {i}"} for i in range(replies)]
+        s["lost"] = {str(i): lost_each for i in range(1, n_feeds + 1)}
+        with open(sp, "w") as f:
+            json.dump(s, f)
+
+    def test_notices_never_starve_command_reception(self):
+        """새 누락이 계속 생겨도 안내가 자기 몫(NOTICE_QUOTA)을 넘어 자리를 차지하면 안 된다. 명령 수신이 굶는다."""
+        self._many_feeds_state(10, replies=40)
+        tg = FakeTG(updates=[msg(5, "/list")], fail_sends=9999)  # 전송은 불통 -> 발송함이 비워지지 않음
+        self.run_bot(tg, feed_of("1"))
+        st = self.state()
+        notices = [b for b in st["outbox"] if b.get("kind") == "notice"]
+        self.assertEqual(len(notices), main.NOTICE_QUOTA)  # 안내는 몫만큼만 (10개가 있어도 5개)
+        self.assertEqual(len(st["lost"]), 10 - main.NOTICE_QUOTA)  # 나머지 5개는 기록으로 남아 다음에
+        self.assertEqual(st["update_offset"], 6)  # 그래도 명령은 가져와 처리됨 (굶지 않음)
+        self.assertTrue(any(b["text"].startswith("구독 중인 RSS") for b in st["outbox"]))
+
+    def test_command_replies_never_starve_notices(self):
+        """반대로 명령 응답이 몰려도 안내 몫은 보장된다."""
+        self._many_feeds_state(3, replies=main.MAX_OUTBOX - main.NOTICE_QUOTA)  # 응답이 쓸 수 있는 자리를 모두 사용
+        tg = FakeTG(updates=[msg(5, "/list")], fail_sends=9999)
+        self.run_bot(tg, feed_of("1"))
+        st = self.state()
+        notices = [b for b in st["outbox"] if b.get("kind") == "notice"]
+        self.assertEqual(len(notices), 3)  # 응답이 가득 찬 상태에서도 안내 3개가 모두 자리를 얻음
+        self.assertEqual(st["lost"], {})
+        self.assertEqual(st["update_offset"], 0)  # 응답 몫이 찼으므로 새 명령은 보류
+        self.assertEqual(len(st["outbox"]), main.MAX_OUTBOX - main.NOTICE_QUOTA + 3)
+
     def test_lost_record_is_cleaned_when_feed_is_removed(self):
         with tempfile.TemporaryDirectory() as d:
             store = Store(d)
@@ -588,8 +626,9 @@ class RunTests(unittest.TestCase):
         down = FakeTG(updates=ups, fail_sends=9999)
         for _ in range(3):
             self.run_bot(down, feed_of("1"))
-        self.assertEqual(len(self.state()["outbox"]), main.MAX_OUTBOX)
-        self.assertEqual(self.state()["update_offset"], 150)  # 가득 차면 더 가져오지 않음 (offset도 그대로)
+        cap = main.MAX_OUTBOX - main.NOTICE_QUOTA  # 명령 응답이 쓸 수 있는 자리 (나머지는 안내 몫)
+        self.assertEqual(len(self.state()["outbox"]), cap)
+        self.assertEqual(self.state()["update_offset"], 100 + cap)  # 가득 차면 더 가져오지 않음 (offset도 그대로)
 
         tg = FakeTG(updates=ups)
         for _ in range(4):
