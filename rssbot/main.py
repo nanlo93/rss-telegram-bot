@@ -1,8 +1,14 @@
-"""한 번 실행: 텔레그램 명령 처리 -> 구독 피드 확인 -> 새 글 알림 -> 상태 저장."""
+"""한 번 실행: 명령 처리 -> [체크포인트] -> 피드 수집 -> [체크포인트] -> 알림 전송.
+
+체크포인트는 상태를 저장소에 먼저 커밋하는 write-ahead 단계다. 새 글을 pending에 기록해 커밋한 뒤에야 전송하므로,
+전송 도중 러너가 강제 종료돼도 글은 저장소의 pending에 남아 다음 실행에서 (중복 가능성은 있어도) 누락 없이 재전송된다.
+"""
 from __future__ import annotations
 
 import html
 import os
+import shlex
+import subprocess
 import sys
 import time
 
@@ -16,17 +22,23 @@ MAX_PER_FEED = 10  # 한 번에 알리는 최대 글 수 (초과분은 요약)
 MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피드당)
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
+CHECKPOINT_TIMEOUT = 120
 
 
 def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
-    """getUpdates로 받은 명령을 처리한다. 지정된 채팅 외의 메시지는 무시."""
+# ---------- 1단계: 텔레그램 명령 적용 ----------
+
+def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> list:
+    """getUpdates로 받은 명령을 상태에 반영하고, 보낼 응답 목록을 돌려준다. (전송은 하지 않음)
+
+    지정된 채팅 외의 메시지는 무시한다. 응답은 체크포인트 이후에 보내므로, 강제 종료돼도 명령이 다시 적용되지 않는다.
+    """
     offset = store.state.get("update_offset", 0)
-    updates = tg.get_updates(offset)
-    for upd in updates:
+    replies = []
+    for upd in tg.get_updates(offset):
         store.state["update_offset"] = upd["update_id"] + 1
         msg = upd.get("message") or {}
         chat_id = str((msg.get("chat") or {}).get("id", ""))
@@ -40,19 +52,11 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
             log(f"명령 처리 오류: {type(e).__name__}: {e}")
             reply = "명령을 처리하다 오류가 발생했습니다."
         if reply:
-            try:
-                tg.send_message(owner_chat_id, reply)
-            except Exception as e:  # 명령은 이미 반영됐으므로 응답 실패가 실행 전체를 막지 않게 함
-                log(f"응답 전송 실패: {type(e).__name__}: {e}")
+            replies.append(reply)
+    return replies
 
 
-def format_entry(feed_name: str, entry) -> str:
-    title = html.escape(entry.title)
-    head = f"<b>{html.escape(feed_name)}</b>\n"
-    if entry.link:
-        return head + f'<a href="{html.escape(entry.link, quote=True)}">{title}</a>'
-    return head + title
-
+# ---------- 2단계: 피드 수집 (전송 없음) ----------
 
 def _queue_item(e: Entry) -> dict:
     return {"id": e.id, "title": e.title, "link": e.link}
@@ -65,7 +69,7 @@ def _persist_pending(store: Store, fid: str, items: list) -> None:
         store.state["pending"].pop(fid, None)
 
 
-def _poll_one(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> None:
+def _collect_one(store: Store, f: dict, notices: list) -> None:
     fid = str(f["id"])
     try:
         parsed = fetch_feed(f["url"])
@@ -74,10 +78,7 @@ def _poll_one(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> None:
         store.state["fails"][fid] = fails
         log(f"[{f['name']}] 확인 실패 ({fails}회 연속): {e}")
         if fails == FAIL_WARN_AT:
-            try:
-                tg.send_message(owner_chat_id, f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {e}")
-            except Exception as err:
-                log(f"[{f['name']}] 경고 전송 실패: {err}")
+            notices.append(f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {e}")
         return
     store.state["fails"].pop(fid, None)
 
@@ -88,29 +89,73 @@ def _poll_one(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> None:
         log(f"[{f['name']}] 기준선 등록: {len(current_ids)}건")
         return
 
-    # 전송 실패분은 pending에 글 내용째 보관하므로, 다음 응답에서 피드가 그 글을 빼도 누락되지 않는다.
     pending = store.state["pending"].get(fid, [])
     known = set(old) | {p["id"] for p in pending}
     new = [_queue_item(e) for e in reversed(parsed.entries) if e.id not in known]  # 오래된 글부터
 
-    # 관측한 글은 전송 여부와 무관하게 seen에 기록하고, 미전송분의 책임은 pending이 진다.
+    # 관측한 글은 seen에 기록하고, 아직 알리지 못한 글은 내용째 pending에 보관한다.
+    # (이후 피드에서 그 글이 사라져도, 전송이 늦어져도 누락되지 않음)
     merged = current_ids + [i for i in old if i not in set(current_ids)]
     store.state["seen"][fid] = merged[: max(SEEN_LIMIT, len(current_ids))]
 
     queue = pending + new
-    if not queue:
-        return
-
-    # 불변식: 전송을 시도하기 전에 "아직 알리지 못한 글"을 먼저 상태에 기록한다.
-    # 이후 전송 중 어떤 예외(타임아웃, 프로세스 종료 등)가 나도 상태에는 미전송분이 남는다.
     overflow = len(queue) - MAX_PENDING
     if overflow > 0:  # 보관 한도를 넘긴 오래된 글은 버리되, 건수를 기록해 다음 요약에서 반드시 알린다.
         store.state["dropped"][fid] = store.state["dropped"].get(fid, 0) + overflow
         queue = queue[overflow:]
         log(f"[{f['name']}] 대기열 한도 초과로 {overflow}건 보류 해제 (누적 {store.state['dropped'][fid]}건, 다음 요약에서 안내)")
     _persist_pending(store, fid, queue)
-    log(f"[{f['name']}] 전송 대기 {len(queue)}건 (신규 {len(new)}건)")
+    if new:
+        log(f"[{f['name']}] 새 글 {len(new)}건 (전송 대기 {len(queue)}건)")
 
+
+def collect_feeds(store: Store) -> list:
+    """모든 구독 피드를 확인해 새 글을 pending에 기록한다. 보낼 안내 메시지 목록을 돌려준다."""
+    notices: list = []
+    for f in store.items:
+        try:
+            _collect_one(store, f, notices)
+        except Exception as e:  # 한 피드의 예기치 못한 오류가 다른 피드 확인을 막지 않도록
+            log(f"[{f['name']}] 처리 중 오류: {type(e).__name__}: {e}")
+    return notices
+
+
+# ---------- 3단계: 전송 ----------
+
+def format_entry(feed_name: str, entry: Entry) -> str:
+    title = html.escape(entry.title)
+    head = f"<b>{html.escape(feed_name)}</b>\n"
+    if entry.link:
+        return head + f'<a href="{html.escape(entry.link, quote=True)}">{title}</a>'
+    return head + title
+
+
+def _send_item(tg: Telegram, owner_chat_id: str, feed_name: str, entry: Entry) -> bool:
+    """글 하나를 보낸다. 텔레그램이 메시지 자체를 거부(HTTP 400)하면 평문으로 한 번 더 시도하고,
+    그래도 거부하면 건너뛴다(False). 일시 오류는 예외로 올려 재시도 경로를 탄다."""
+    try:
+        tg.send_message(owner_chat_id, format_entry(feed_name, entry), html=True)
+        return True
+    except TelegramError as e:
+        if not e.permanent:
+            raise
+        log(f"[{feed_name}] HTML 전송 거부, 평문으로 재시도: {e}")
+    try:
+        tg.send_message(owner_chat_id, f"{feed_name}\n{entry.title}\n{entry.link}".strip())
+        return True
+    except TelegramError as e:
+        if not e.permanent:
+            raise
+        log(f"[{feed_name}] 전송할 수 없는 글이라 건너뜀: {entry.id} ({e})")
+        return False
+
+
+def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> bool:
+    """피드의 pending을 전송한다. 일시 오류로 중단되면 False (남은 글은 pending에 유지)."""
+    fid = str(f["id"])
+    queue = store.state["pending"].get(fid, [])
+    if not queue:
+        return True
     skipped = max(0, len(queue) - MAX_PER_FEED)
     to_send = queue[skipped:]
     omitted = skipped + store.state["dropped"].get(fid, 0)
@@ -120,23 +165,46 @@ def _poll_one(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> None:
             store.state["dropped"].pop(fid, None)
             _persist_pending(store, fid, to_send)
         for idx, item in enumerate(to_send):
-            tg.send_message(owner_chat_id, format_entry(f["name"], Entry(**item)), html=True)
+            _send_item(tg, owner_chat_id, f["name"], Entry(**item))
             _persist_pending(store, fid, to_send[idx + 1 :])
             time.sleep(SEND_INTERVAL)
     except Exception as err:  # 타임아웃 등 어떤 실패든 pending에 남은 글을 다음 실행에서 재시도
         left = len(store.state["pending"].get(fid, []))
         log(f"[{f['name']}] 전송 실패, 남은 {left}건은 다음 실행에서 재시도: {type(err).__name__}: {err}")
+        return False
+    return True
 
 
-def poll_feeds(store: Store, tg: Telegram, owner_chat_id: str) -> None:
-    for f in store.items:
+def deliver(store: Store, tg: Telegram, owner_chat_id: str, messages: list) -> None:
+    """명령 응답·안내를 보낸 뒤 모든 피드의 pending을 전송한다. 피드 확인 성공 여부와 무관하게 재시도한다.
+
+    텔레그램 자체가 불통이면(첫 실패) 나머지는 시도하지 않고 다음 실행으로 넘긴다.
+    """
+    for text in messages:
         try:
-            _poll_one(store, tg, owner_chat_id, f)
-        except Exception as e:  # 한 피드의 예기치 못한 오류가 다른 피드 확인을 막지 않도록
-            log(f"[{f['name']}] 처리 중 오류: {type(e).__name__}: {e}")
+            tg.send_message(owner_chat_id, text)
+        except Exception as e:
+            log(f"안내 전송 실패, 이번 실행의 전송을 중단: {type(e).__name__}: {e}")
+            return
+    for f in list(store.items):
+        if not _deliver_feed(store, tg, owner_chat_id, f):
+            return
 
 
-def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None) -> None:
+# ---------- 실행 ----------
+
+def _checkpoint(store: Store, hook) -> None:
+    """상태를 디스크에 저장하고, 설정된 훅(저장소 커밋·푸시)을 호출한다. 훅이 실패해도 실행은 계속한다."""
+    store.save()
+    if hook is None:
+        return
+    try:
+        hook()
+    except Exception as e:
+        log(f"체크포인트 실패 (알림은 계속 진행): {type(e).__name__}: {e}")
+
+
+def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None, checkpoint=None) -> None:
     store = Store(data_dir)
     tg = tg or Telegram(token)
     try:
@@ -146,13 +214,34 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
                 store.state["commands_v"] = COMMANDS_VERSION
             except TelegramError as e:
                 log(f"명령 메뉴 등록 실패: {e}")
+
+        messages: list = []
         try:
-            process_updates(store, tg, owner_chat_id)
+            messages += process_updates(store, tg, owner_chat_id)
         except Exception as e:  # 명령 수신 실패와 무관하게 새 글 확인은 계속 진행
             log(f"명령 수신 처리 실패: {type(e).__name__}: {e}")
-        poll_feeds(store, tg, owner_chat_id)
+        _checkpoint(store, checkpoint)  # 명령 반영 + update offset을 먼저 확정 (재시작해도 명령이 재실행되지 않음)
+
+        messages += collect_feeds(store)
+        _checkpoint(store, checkpoint)  # 새 글을 pending으로 확정한 뒤에야 전송 (write-ahead)
+
+        deliver(store, tg, owner_chat_id, messages)
     finally:
         store.save()
+
+
+def _hook_from_env():
+    cmd = os.environ.get("RSSBOT_CHECKPOINT_CMD", "").strip()
+    if not cmd:
+        return None
+    argv = shlex.split(cmd)
+
+    def hook() -> None:
+        r = subprocess.run(argv, timeout=CHECKPOINT_TIMEOUT)
+        if r.returncode != 0:
+            raise RuntimeError(f"{argv[0]} 종료 코드 {r.returncode}")
+
+    return hook
 
 
 def main() -> int:
@@ -161,7 +250,7 @@ def main() -> int:
     if not token or not chat_id:
         log("TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID 환경 변수가 필요합니다.")
         return 2
-    run(os.environ.get("DATA_DIR", "data"), token, chat_id)
+    run(os.environ.get("DATA_DIR", "data"), token, chat_id, checkpoint=_hook_from_env())
     return 0
 
 

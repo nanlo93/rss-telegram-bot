@@ -10,7 +10,15 @@ import urllib.request
 
 
 class TelegramError(Exception):
-    """Bot API가 오류를 돌려줬을 때의 예외."""
+    """Bot API가 오류를 돌려줬을 때의 예외.
+
+    permanent: 메시지 자체가 거부된 경우(HTTP 400). 재시도해도 소용없는 요청이므로 호출자가 건너뛸 수 있다.
+    403(봇 차단)·429·네트워크 오류 등은 일시적/전역 문제로 보고 permanent로 취급하지 않는다.
+    """
+
+    def __init__(self, message: str, permanent: bool = False):
+        super().__init__(message)
+        self.permanent = permanent
 
 
 class Telegram:
@@ -43,7 +51,7 @@ class Telegram:
             if payload.get("error_code") == 429 and retry_after and attempt < retries - 1:
                 time.sleep(min(int(retry_after), 60) + 1)
                 continue
-            raise TelegramError(f"{method}: {payload.get('description', payload)}")
+            raise TelegramError(f"{method}: {payload.get('description', payload)}", permanent=payload.get("error_code") == 400)
 
     def get_updates(self, offset: int) -> list:
         return self._call("getUpdates", {"offset": offset, "timeout": 0, "allowed_updates": ["message"]})

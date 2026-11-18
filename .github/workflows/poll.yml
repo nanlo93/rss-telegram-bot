@@ -27,14 +27,8 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # 새 글을 전송하기 전에 상태를 먼저 커밋(write-ahead)해, 실행이 중간에 끊겨도 알림이 유실되지 않게 한다.
+          RSSBOT_CHECKPOINT_CMD: bash scripts/commit-state.sh
       - name: 상태 파일 커밋
         if: always()
-        run: |
-          if [ -n "$(git status --porcelain data)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add data
-            git commit -m "chore: 구독 상태 갱신"
-            git pull --rebase
-            git push
-          fi
+        run: bash scripts/commit-state.sh
