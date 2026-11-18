@@ -32,25 +32,7 @@
   },
   "fails": {},
   "commands_v": 1,
-  "pending": {
-    "1": [
-      {
-        "id": "https://news.hada.io/topic?id=37400",
-        "title": "Show GN: Claude Code와 Codex를 한 화면에서 관리하는 macOS 개발 도구를 만들었습니다",
-        "link": "https://news.hada.io/topic?id=37400"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37401",
-        "title": "Show GN: 냥이잡기 - 부정행위를 시도하는 냥이들을 잡는 게임",
-        "link": "https://news.hada.io/topic?id=37401"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37402",
-        "title": "YC 스타트업 면접 중 알게 된 내 LinkedIn 무단 사용 사실",
-        "link": "https://news.hada.io/topic?id=37402"
-      }
-    ]
-  },
+  "pending": {},
   "dropped": {},
   "outbox": [],
   "rebase": {},
