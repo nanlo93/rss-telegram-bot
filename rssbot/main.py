@@ -95,10 +95,13 @@ def poll_feeds(store: Store, tg: Telegram, owner_chat_id: str) -> None:
 
         skipped = max(0, len(queue) - MAX_PER_FEED)
         to_send = queue[skipped:]
+        dropped = store.state["dropped"].get(fid, 0)  # 대기열 한도로 이미 버려진 글 수
+        omitted = skipped + dropped
         remaining = queue  # 전송 도중 실패하면 아직 안 보낸 글부터 다시 시도
         try:
-            if skipped:
-                tg.send_message(owner_chat_id, f"'{f['name']}' 새 글이 많아 오래된 {skipped}건은 알림을 생략하고 최신 {len(to_send)}건만 알립니다.")
+            if omitted:
+                tg.send_message(owner_chat_id, f"'{f['name']}' 새 글이 많아 오래된 {omitted}건은 알림을 생략하고 최신 {len(to_send)}건만 알립니다.")
+                store.state["dropped"].pop(fid, None)
                 remaining = to_send
             for idx, item in enumerate(to_send):
                 tg.send_message(owner_chat_id, format_entry(f["name"], Entry(**item)), html=True)
@@ -108,6 +111,10 @@ def poll_feeds(store: Store, tg: Telegram, owner_chat_id: str) -> None:
             log(f"[{f['name']}] 전송 실패, 남은 {len(remaining)}건은 다음 실행에서 재시도: {err}")
 
         if remaining:
+            overflow = len(remaining) - MAX_PENDING
+            if overflow > 0:  # 한도를 넘긴 오래된 글은 버리되, 건수를 기록해 다음 요약에서 반드시 알린다.
+                store.state["dropped"][fid] = store.state["dropped"].get(fid, 0) + overflow
+                log(f"[{f['name']}] 대기열 한도 초과로 {overflow}건 보류 해제 (누적 {store.state['dropped'][fid]}건, 다음 요약에서 안내)")
             store.state["pending"][fid] = remaining[-MAX_PENDING:]
         else:
             store.state["pending"].pop(fid, None)

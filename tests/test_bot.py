@@ -190,6 +190,30 @@ class RunTests(unittest.TestCase):
         self.assertIn("title-15", tg.sent[-1][1])
         self.assertNotIn("1", self.state()["pending"])
 
+    def test_pending_overflow_is_counted_and_announced_not_silently_lost(self):
+        self.run_bot(FakeTG(), feed_of("0"))
+        with mock.patch("rssbot.main.MAX_PENDING", 5):
+            ids = [str(i) for i in range(12, 0, -1)] + ["0"]
+            self.run_bot(FakeTG(fail_sends=99), feed_of(*ids))  # 신규 12건, 전부 전송 실패
+            st = self.state()
+            self.assertEqual(len(st["pending"]["1"]), 5)
+            self.assertEqual(st["dropped"]["1"], 7)
+
+            more = [str(i) for i in range(15, 12, -1)] + ids
+            self.run_bot(FakeTG(fail_sends=99), feed_of(*more))  # 3건 더, 또 실패
+            st = self.state()
+            self.assertEqual(len(st["pending"]["1"]), 5)
+            self.assertEqual(st["dropped"]["1"], 10)
+
+            tg = FakeTG()
+            self.run_bot(tg, feed_of(*more))  # 복구
+        texts = [t for _, t, _ in tg.sent]
+        self.assertIn("10건은 알림을 생략", texts[0])
+        self.assertEqual(len(texts), 6)  # 요약 1 + 대기열 5건
+        st = self.state()
+        self.assertNotIn("1", st["pending"])
+        self.assertNotIn("1", st["dropped"])
+
     def test_commands_processed_only_from_owner_and_offset_advances(self):
         tg = FakeTG(updates=[msg(10, "/list"), msg(11, "/list", chat="999")])
         with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
