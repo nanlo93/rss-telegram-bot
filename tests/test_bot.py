@@ -387,6 +387,31 @@ class RunTests(unittest.TestCase):
         self.assertIn("7건", lost[0])
         self.assertNotIn("1", self.state()["lost"])  # 안내를 냈으니 기록 정리
 
+    def test_recorded_lost_notice_gets_the_free_slot_before_new_command_replies(self):
+        """자리가 하나 날 때마다 새 명령 응답이 먼저 채우면, 명령이 계속 들어오는 동안 누락 안내가 끝없이 밀린다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        sp = os.path.join(self.tmp.name, "state.json")
+        with open(sp) as f:
+            s = json.load(f)
+        s["outbox"] = [{"text": f"응답 {i}"} for i in range(main.MAX_OUTBOX - 1)]  # 자리가 딱 하나 남음
+        s["lost"] = {"1": 3}  # 이미 기록된 누락 안내
+        with open(sp, "w") as f:
+            json.dump(s, f)
+        tg = FakeTG(updates=[msg(5, "/list"), msg(6, "/list"), msg(7, "/list")], fail_sends=9999)  # 전송은 아직 불통
+        self.run_bot(tg, feed_of("1"))
+        st = self.state()
+        texts = [b["text"] for b in st["outbox"]]
+        self.assertTrue(any("밀려나 알리지 못했습니다" in t and "3건" in t for t in texts))  # 안내가 그 자리를 얻음
+        self.assertNotIn("1", st["lost"])
+        self.assertEqual(st["update_offset"], 0)  # 새 명령은 자리가 날 때까지 가져오지 않음 (응답이 밀어내지 못함)
+
+        tg2 = FakeTG(updates=[msg(5, "/list"), msg(6, "/list"), msg(7, "/list")])
+        for _ in range(3):
+            self.run_bot(tg2, feed_of("1"))
+        sent = [t for _, t, _ in tg2.sent]
+        self.assertEqual(len([t for t in sent if "밀려나 알리지 못했습니다" in t]), 1)
+        self.assertEqual(len([t for t in sent if t.startswith("구독 중인 RSS")]), 3)  # 명령 응답도 모두 전달
+
     def test_lost_record_is_cleaned_when_feed_is_removed(self):
         with tempfile.TemporaryDirectory() as d:
             store = Store(d)

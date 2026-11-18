@@ -503,6 +503,9 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
             except TelegramError as e:
                 log(f"명령 메뉴 등록 실패: {e}")
 
+        # 이미 기록해 둔 누락 안내는 새 명령 응답보다 먼저 발송함 자리를 얻어야 한다. 순서가 반대면 자리가 날 때마다 새 응답이
+        # 먼저 채워, 명령이 계속 들어오는 동안 이 안내가 끝없이 뒤로 밀린다. (명령은 outbox 여유만큼만 가져오므로 안내가 우선권을 갖는다)
+        _enqueue_lost(store)
         try:
             process_updates(store, tg, owner_chat_id)
         except Exception as e:  # 명령 수신 실패와 무관하게 새 글 확인은 계속 진행
