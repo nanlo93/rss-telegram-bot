@@ -1,6 +1,29 @@
 {
   "update_offset": 0,
-  "seen": {},
+  "seen": {
+    "1": [
+      "https://news.hada.io/topic?id=37394",
+      "https://news.hada.io/topic?id=37393",
+      "https://news.hada.io/topic?id=37392",
+      "https://news.hada.io/topic?id=37391",
+      "https://news.hada.io/topic?id=37390",
+      "https://news.hada.io/topic?id=37388",
+      "https://news.hada.io/topic?id=37385",
+      "https://news.hada.io/topic?id=37384",
+      "https://news.hada.io/topic?id=37383",
+      "https://news.hada.io/topic?id=37382",
+      "https://news.hada.io/topic?id=37381",
+      "https://news.hada.io/topic?id=37380",
+      "https://news.hada.io/topic?id=37379",
+      "https://news.hada.io/topic?id=37378",
+      "https://news.hada.io/topic?id=37377",
+      "https://news.hada.io/topic?id=37376",
+      "https://news.hada.io/topic?id=37375",
+      "https://news.hada.io/topic?id=37373",
+      "https://news.hada.io/topic?id=37372",
+      "https://news.hada.io/topic?id=37371"
+    ]
+  },
   "fails": {},
-  "commands_v": 0
+  "commands_v": 1
 }
