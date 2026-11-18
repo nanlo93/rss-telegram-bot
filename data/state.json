@@ -26,14 +26,6 @@
   },
   "fails": {},
   "commands_v": 1,
-  "pending": {
-    "1": [
-      {
-        "id": "https://news.hada.io/topic?id=37394",
-        "title": "FOSS for All Conference 2026: 커뮤니티 주도 국내 오픈소스 컨퍼런스",
-        "link": "https://news.hada.io/topic?id=37394"
-      }
-    ]
-  },
+  "pending": {},
   "dropped": {}
 }
