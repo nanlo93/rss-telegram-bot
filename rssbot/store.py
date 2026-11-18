@@ -25,7 +25,8 @@ def _dump(path: str, obj: dict) -> None:
 class Store:
     """feeds: {"next_id": int, "feeds": [{"id","name","url"}]}
     state: {"update_offset": int, "seen": {feed_id: [글 ID]}, "pending": {feed_id: [{"id","title","link"}]},
-    "dropped": {feed_id: 대기열 한도로 버려진 글 수}, "fails": {feed_id: int}, "rebase": {feed_id: True}, "deferred": {feed_id: [대기열이 가득 차 미룬 글 ID]}, "commands_v": int,
+    "dropped": {feed_id: 대기열 한도로 버려진 글 수}, "fails": {feed_id: int}, "rebase": {feed_id: True}, "deferred": {feed_id: [대기열이 가득 차 미룬 글 ID]},
+    "lost": {feed_id: 미뤄 둔 사이 피드에서 밀려나 알리지 못한 글 수 (안내를 보낼 때까지 보관)}, "commands_v": int,
     "outbox": [{"text": 보내야 할 명령 응답·경고 메시지}]}
     """
 
@@ -42,8 +43,8 @@ class Store:
         메모리 상태를 그대로 두면 다음 save()가 그 변경을 되돌리므로, 체크포인트 직후 병합된 내용을 다시 읽는다.
         """
         self.feeds = _load(self.feeds_path, {"next_id": 1, "feeds": []})
-        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "dropped": {}, "fails": {}, "rebase": {}, "deferred": {}, "commands_v": 0, "outbox": []})
-        for key, default in (("seen", {}), ("pending", {}), ("dropped", {}), ("fails", {}), ("rebase", {}), ("deferred", {}), ("outbox", [])):
+        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "dropped": {}, "fails": {}, "rebase": {}, "deferred": {}, "lost": {}, "commands_v": 0, "outbox": []})
+        for key, default in (("seen", {}), ("pending", {}), ("dropped", {}), ("fails", {}), ("rebase", {}), ("deferred", {}), ("lost", {}), ("outbox", [])):
             self.state.setdefault(key, default)
 
     @property
@@ -59,7 +60,7 @@ class Store:
 
     def remove(self, feed: dict) -> None:
         self.items.remove(feed)
-        for key in ("seen", "pending", "dropped", "fails", "rebase", "deferred"):
+        for key in ("seen", "pending", "dropped", "fails", "rebase", "deferred", "lost"):
             self.state[key].pop(str(feed["id"]), None)
 
     def mark_url_changed(self, feed: dict) -> None:

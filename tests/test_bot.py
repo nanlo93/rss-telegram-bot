@@ -358,6 +358,44 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len(lost), 1)
         self.assertIn("7건", lost[0])  # 6~12번 글 7건
 
+    def test_lost_notice_survives_a_full_outbox_and_never_displaces_replies(self):
+        """발송함이 가득 차 있어도 밀려난 글의 안내가 사라지면 안 되고, 쌓인 명령 응답을 밀어내서도 안 된다."""
+        with mock.patch("rssbot.main.MAX_PENDING", 5):
+            self.run_bot(FakeTG(), feed_of("0"))
+            first = feed_of(*[str(i) for i in range(12, 0, -1)], "0")
+            self.run_bot(FakeTG(fail_sends=99), first)  # 6~12번 글을 미룸
+            sp = os.path.join(self.tmp.name, "state.json")
+            with open(sp) as f:
+                s = json.load(f)
+            s["outbox"] = [{"text": f"응답 {i}"} for i in range(main.MAX_OUTBOX)]  # 발송함이 가득 참
+            with open(sp, "w") as f:
+                json.dump(s, f)
+            rolled = feed_of(*[str(i) for i in range(20, 12, -1)], "0")  # 6~12번 글이 피드에서 밀려남
+            self.run_bot(FakeTG(fail_sends=99), rolled)
+            st = self.state()
+            self.assertEqual(st["lost"]["1"], 7)  # 안내를 못 넣었어도 누락 사실은 상태에 남음
+            self.assertEqual(len(st["outbox"]), main.MAX_OUTBOX)
+            self.assertEqual(st["outbox"][0]["text"], "응답 0")  # 명령 응답을 밀어내지 않음
+
+            tg = FakeTG()
+            for _ in range(3):  # 복구: 발송함이 비워진 다음 실행에서 안내가 나감
+                self.run_bot(tg, rolled)
+        texts = [t for _, t, is_html in tg.sent if not is_html]
+        self.assertTrue(all(f"응답 {i}" in texts for i in range(main.MAX_OUTBOX)))  # 응답은 모두 전달
+        lost = [t for t in texts if "밀려나 알리지 못했습니다" in t]
+        self.assertEqual(len(lost), 1)
+        self.assertIn("7건", lost[0])
+        self.assertNotIn("1", self.state()["lost"])  # 안내를 냈으니 기록 정리
+
+    def test_lost_record_is_cleaned_when_feed_is_removed(self):
+        with tempfile.TemporaryDirectory() as d:
+            store = Store(d)
+            commands.handle("/add https://ex.com/rss", store, {"https://ex.com/rss": (feed_of("a"), None)})
+            fid = str(store.items[0]["id"])
+            store.state["lost"][fid] = 3
+            store.remove(store.items[0])
+            self.assertNotIn(fid, store.state["lost"])
+
     def test_deferral_is_quiet_when_queue_drains_before_posts_roll_off(self):
         with mock.patch("rssbot.main.MAX_PENDING", 5):
             self.run_bot(FakeTG(), feed_of("0"))

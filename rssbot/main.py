@@ -253,7 +253,9 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
     else:
         store.state["deferred"].pop(fid, None)
     if lost:
-        notices.append(f"'{f['name']}' 대기열이 가득 차 미뤄 둔 새 글 {len(lost)}건이 피드에서 밀려나 알리지 못했습니다.")
+        # 안내 메시지를 바로 발송함에 넣지 않고 건수를 상태에 먼저 기록한다. 발송함이 가득 차 있으면 새 안내가 버려지는데,
+        # 위에서 추적(deferred)은 이미 지웠으므로 그러면 누락 사실이 영구히 사라진다. 기록은 안내를 실제로 적재할 때 지운다.
+        store.state["lost"][fid] = store.state["lost"].get(fid, 0) + len(lost)
     elif deferred and not prev_deferred:
         notices.append(f"'{f['name']}' 대기열이 가득 차 새 글 {len(deferred)}건의 알림을 미룹니다. 전송이 정상화되기 전에 피드에서 밀려나면 알리지 못할 수 있습니다.")
 
@@ -314,6 +316,24 @@ def _fetch_all(feeds: list) -> dict:
     for t in threads:
         t.join(max(0.0, deadline - time.monotonic()))
     return dict(results)  # 시점 고정 복사본: 이후 늦게 끝나는 스레드의 결과는 쓰지 않는다
+
+
+def _enqueue_lost(store: Store) -> None:
+    """피드에서 밀려나 알리지 못한 글의 안내를 발송함에 적재한다. 발송함에 자리가 있을 때만 적재하고 기록을 지운다.
+
+    자리가 없으면 기록을 그대로 두어 다음 실행에서 다시 시도한다. (명령 응답을 밀어내지도, 이 안내를 버리지도 않는다)
+    """
+    names = {str(f["id"]): f["name"] for f in store.items}
+    for fid in list(store.state["lost"]):
+        count = store.state["lost"][fid]
+        if fid not in names or not count:  # 구독이 삭제됐거나 의미 없는 값
+            store.state["lost"].pop(fid, None)
+            continue
+        if len(store.state["outbox"]) >= MAX_OUTBOX:
+            log(f"[{names[fid]}] 발송함이 가득 차 밀려난 글 {count}건의 안내를 다음 실행으로 미룹니다")
+            continue
+        _enqueue(store, [f"'{names[fid]}' 대기열이 가득 차 미뤄 둔 새 글 {count}건이 피드에서 밀려나 알리지 못했습니다."])
+        store.state["lost"].pop(fid, None)
 
 
 def collect_feeds(store: Store) -> list:
@@ -495,6 +515,7 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
             return False
 
         _enqueue(store, collect_feeds(store), droppable=True)
+        _enqueue_lost(store)  # 부가 안내와 달리 버리지 않고, 자리가 날 때까지 상태에 보관
         if not _checkpoint(store, checkpoint):  # 새 글을 pending으로 확정한 뒤에야 전송 (write-ahead)
             # 알림 자체는 보낸다(중복은 감수). 대신 실행을 실패로 표시해 저장 실패를 눈에 띄게 한다.
             ok = False
