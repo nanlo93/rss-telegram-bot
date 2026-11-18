@@ -725,6 +725,33 @@ class RunTests(unittest.TestCase):
         self.assertIn("구독 중인 RSS", texts[2])  # 뒤의 /list도 처리됨
         self.assertEqual(self.state()["update_offset"], 8)  # 세 명령 모두 넘어감
 
+    def test_failed_prefetch_never_causes_network_access_inside_deferred_section(self):
+        """사전 검증이 실패해도 handle()이 보류 구간(시간 한도 신호 차단) 안에서 피드를 다시 요청하면 안 된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        net = mock.Mock(side_effect=AssertionError("보류 구간에서 네트워크 접속"))
+        tg = FakeTG(updates=[msg(5, "/add https://ex.com/rss"), msg(6, "/edit 1 url https://ex.com/new"), msg(7, "/list")])
+        with mock.patch("rssbot.commands.prefetch", side_effect=RuntimeError("사전 검증 실패")), \
+             mock.patch("rssbot.commands.fetch_feed", net), mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        net.assert_not_called()
+        texts = [t for _, t, _ in tg.sent]
+        self.assertEqual(len(texts), 3)
+        self.assertIn("사전 검증", texts[0])
+        self.assertIn("사전 검증", texts[1])
+        self.assertIn("구독 중인 RSS", texts[2])  # 뒤의 명령은 정상 처리
+        st = Store(self.tmp.name)
+        self.assertEqual([f["url"] for f in st.items], ["https://gn/rss"])  # 검증 못 한 add/edit은 반영되지 않음
+        self.assertEqual(st.state["update_offset"], 8)
+
+    def test_handle_with_prefetch_dict_never_fetches_and_none_fetches(self):
+        with tempfile.TemporaryDirectory() as d:
+            store = Store(d)
+            with mock.patch("rssbot.commands.fetch_feed", side_effect=AssertionError("접속하면 안 됨")):
+                self.assertIn("사전 검증", commands.handle("/add https://ex.com/rss", store, {}))  # 빈 dict도 접속 금지
+            with mock.patch("rssbot.commands.fetch_feed", return_value=feed_of("a")) as ff:
+                self.assertIn("추가했습니다", commands.handle("/add https://ex.com/rss", store))  # None이면 직접 가져옴
+                ff.assert_called_once()
+
     def test_prefetch_failure_is_swallowed_and_never_leaks_out(self):
         with mock.patch("rssbot.commands.fetch_feed", side_effect=RuntimeError("예기치 못한 오류")):
             self.assertEqual(commands.prefetch("/add https://ex.com/rss"), {})

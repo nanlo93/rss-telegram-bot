@@ -100,12 +100,20 @@ def prefetch(text: str) -> dict:
 
 
 def _fetch(prefetched, url: str):
-    if prefetched and url in prefetched:
+    """검증용 피드를 얻는다.
+
+    prefetched가 None이면(단독 호출) 직접 가져온다. dict이면(봇의 명령 처리 경로) **절대 네트워크에 접속하지 않는다**:
+    이 경로의 handle()은 시간 한도 신호를 보류한 구간 안에서 실행되므로, 여기서 접속하면 그동안 전체 시간 한도가 무력화된다.
+    사전 검증(prefetch)이 실패했거나 결과가 없으면 오류로 알리고, 사용자가 명령을 다시 보내게 한다.
+    """
+    if prefetched is None:
+        return fetch_feed(url)
+    if url in prefetched:
         feed, err = prefetched[url]
         if err is not None:
             raise err
         return feed
-    return fetch_feed(url)
+    raise FeedError("사전 검증을 하지 못했습니다. 잠시 후 명령을 다시 보내 주세요")
 
 
 def _pick(store: Store, token: str):
@@ -194,7 +202,11 @@ HANDLERS = {
 
 
 def handle(text: str, store: Store, prefetched: dict | None = None) -> str | None:
-    """명령 메시지를 처리해 응답을 돌려준다. 명령이 아니면 None. prefetched는 prefetch()의 결과(없으면 직접 가져옴)."""
+    """명령 메시지를 처리해 응답을 돌려준다. 명령이 아니면 None.
+
+    prefetched: prefetch()의 결과. None이면 필요한 피드를 직접 가져오고, dict이면(빈 dict 포함) 네트워크에 접속하지 않고
+    그 결과만 쓴다.
+    """
     parts = text.strip().split()
     if not parts or not parts[0].startswith("/"):
         return None
