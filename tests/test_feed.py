@@ -48,6 +48,20 @@ class ParseTests(unittest.TestCase):
         with self.assertRaises(FeedError):
             parse_feed(evil)
 
+    def test_rejects_entity_declarations_in_utf16(self):
+        evil = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE x [<!ENTITY a "aaaa">]><rss><channel><title>&a;</title></channel></rss>'
+        with self.assertRaises(FeedError):
+            parse_feed(evil.encode("utf-16"))
+
+    def test_rejects_parameter_entity_declarations(self):
+        evil = b'<?xml version="1.0"?><!DOCTYPE x [<!ENTITY % p "x">]><rss><channel><title>t</title></channel></rss>'
+        with self.assertRaises(FeedError):
+            parse_feed(evil)
+
+    def test_plain_doctype_without_entities_is_ok(self):
+        ok = b'<?xml version="1.0"?><!DOCTYPE rss><rss version="2.0"><channel><title>t</title></channel></rss>'
+        self.assertEqual(parse_feed(ok).title, "t")
+
     def test_clean_link_keeps_other_params(self):
         self.assertEqual(clean_link("https://a.com/p?id=3&utm_source=x&ref=y"), "https://a.com/p?id=3&ref=y")
 

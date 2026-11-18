@@ -5,6 +5,7 @@ import html
 import re
 import urllib.request
 import xml.etree.ElementTree as ET
+from xml.parsers import expat
 from dataclasses import dataclass
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
@@ -61,11 +62,26 @@ def _atom_link(entry) -> str:
     return fallback
 
 
+def _forbid_entities(data: bytes) -> None:
+    """엔티티 선언(billion laughs 등 확장 공격의 전제)이 있으면 거부한다.
+
+    바이트 검색은 UTF-16 같은 다른 인코딩으로 우회되므로, expat가 디코딩한 뒤 호출하는 핸들러로 검사한다.
+    """
+
+    def reject(*_args):
+        raise FeedError("엔티티 선언이 포함된 피드는 지원하지 않음")
+
+    parser = expat.ParserCreate()
+    parser.EntityDeclHandler = reject
+    try:
+        parser.Parse(data, True)
+    except expat.ExpatError as e:
+        raise FeedError(f"XML 해석 실패: {e}") from e
+
+
 def parse_feed(data: bytes) -> Feed:
     """RSS 2.0 또는 Atom XML 바이트를 Feed로 변환한다."""
-    # 엔티티 확장 공격(billion laughs 등) 방어: 사용자 지정 엔티티 선언은 거부한다.
-    if b"<!ENTITY" in data:
-        raise FeedError("엔티티 선언이 포함된 피드는 지원하지 않음")
+    _forbid_entities(data)
     try:
         root = ET.fromstring(data)
     except ET.ParseError as e:
