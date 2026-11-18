@@ -25,7 +25,7 @@ from .store import SEEN_LIMIT, Store
 from .telegram import Telegram, TelegramError
 
 COMMANDS_VERSION = 1  # commands.COMMANDS를 바꾸면 올려서 메뉴를 다시 등록
-MAX_PER_FEED = 10  # 한 번에 알리는 최대 글 수 (초과분은 요약)
+MAX_PER_FEED = 10  # 한 번의 실행에서 피드 하나에 보내는 최대 글 수 (나머지는 다음 실행에서 이어서 보냄)
 MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피드당)
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
@@ -348,30 +348,37 @@ def _send_item(tg: Telegram, owner_chat_id: str, feed_name: str, entry: Entry) -
 
 
 def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict, deadline: float | None = None) -> bool:
-    """피드의 pending을 전송한다. 일시 오류로 중단되면 False (남은 글은 pending에 유지)."""
+    """피드의 pending을 오래된 글부터 한 번에 MAX_PER_FEED건씩 전송한다. 나머지는 pending에 두고 다음 실행에서 이어 보낸다.
+
+    오래된 글을 건너뛰고 최신 글만 보내는 방식은 쓰지 않는다. 주소 변경 뒤의 중복 알림처럼 새로 쌓인 글이 발송 자리를 채우면
+    먼저 대기하던 진짜 미전송 알림이 영구히 사라지기 때문이다. 대신 쌓인 순서대로 나눠 보내 몇 번의 실행에 걸쳐 모두 전달한다.
+    (보관 한도 MAX_PENDING를 넘겨 이미 버려진 건수만 dropped로 남겨 안내한다.)
+    일시 오류로 중단되면 False (남은 글은 pending에 유지).
+    """
     fid = str(f["id"])
     queue = store.state["pending"].get(fid, [])
     if not queue:
         return True
-    skipped = max(0, len(queue) - MAX_PER_FEED)
-    to_send = queue[skipped:]
-    omitted = skipped + store.state["dropped"].get(fid, 0)
+    to_send = queue[:MAX_PER_FEED]
+    dropped = store.state["dropped"].get(fid, 0)
     try:
-        if omitted:
-            tg.send_message(owner_chat_id, f"'{f['name']}' 새 글이 많아 오래된 {omitted}건은 알림을 생략하고 최신 {len(to_send)}건만 알립니다.")
+        if dropped:
+            tg.send_message(owner_chat_id, f"'{f['name']}' 알림이 대기열 한도({MAX_PENDING}건)를 넘어 오래된 {dropped}건은 알리지 못했습니다.")
             store.state["dropped"].pop(fid, None)
-            _persist_pending(store, fid, to_send)
         for idx, item in enumerate(to_send):
             if deadline is not None and time.monotonic() >= deadline:
-                log(f"[{f['name']}] 전송 시간 한도에 도달해 남은 {len(to_send) - idx}건은 다음 실행에서 보냅니다.")
+                log(f"[{f['name']}] 전송 시간 한도에 도달해 남은 {len(queue) - idx}건은 다음 실행에서 보냅니다.")
                 return False
             _send_item(tg, owner_chat_id, f["name"], Entry(**item))
-            _persist_pending(store, fid, to_send[idx + 1 :])
+            _persist_pending(store, fid, queue[idx + 1 :])  # 보낸 글만 지우고 나머지는 그대로 둔다
             time.sleep(SEND_INTERVAL)
     except Exception as err:  # 타임아웃 등 어떤 실패든 pending에 남은 글을 다음 실행에서 재시도
         left = len(store.state["pending"].get(fid, []))
         log(f"[{f['name']}] 전송 실패, 남은 {left}건은 다음 실행에서 재시도: {type(err).__name__}: {err}")
         return False
+    left = len(store.state["pending"].get(fid, []))
+    if left:
+        log(f"[{f['name']}] {len(to_send)}건 전송, 남은 {left}건은 다음 실행에서 이어서 보냅니다.")
     return True
 
 

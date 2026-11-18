@@ -257,16 +257,41 @@ class RunTests(unittest.TestCase):
         self.run_bot(FakeTG(fail_sends=99), feed_of(*ids))
         self.assertEqual(len(self.state()["pending"]["1"]), 15)
 
-    def test_flood_is_capped_with_summary(self):
+    def test_backlog_is_sent_oldest_first_in_batches_without_dropping_anything(self):
         tg = FakeTG()
         self.run_bot(tg, feed_of("0"))
         ids = [str(i) for i in range(15, 0, -1)] + ["0"]
         self.run_bot(tg, feed_of(*ids))
-        self.assertEqual(len(tg.sent), main.MAX_PER_FEED + 1)
-        self.assertIn("생략", tg.sent[0][1])  # 요약 안내가 먼저
-        self.assertIn("title-6", tg.sent[1][1])  # 이어서 최신 10건을 오래된 순으로
-        self.assertIn("title-15", tg.sent[-1][1])
+        self.assertEqual(len(tg.sent), main.MAX_PER_FEED)  # 한 번에 10건, 오래된 글부터
+        self.assertIn("title-1", tg.sent[0][1])
+        self.assertIn("title-10", tg.sent[-1][1])
+        self.assertEqual(len(self.state()["pending"]["1"]), 5)  # 나머지는 건너뛰지 않고 대기
+        self.run_bot(tg, feed_of(*ids))  # 다음 실행에서 이어서
+        texts = [t for _, t, _ in tg.sent]
+        self.assertEqual(len(texts), 15)
+        self.assertIn("title-15", texts[-1])
+        self.assertTrue(all("생략" not in t and "알리지 못했습니다" not in t for t in texts))
         self.assertNotIn("1", self.state()["pending"])
+
+    def test_duplicates_after_url_change_never_push_out_earlier_unsent_alerts(self):
+        """주소 변경 뒤 모호한 근사 일치로 쌓인 중복 알림이 발송 자리를 채워, 먼저 대기하던 미전송 알림을 밀어내면 안 된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        self.run_bot(FakeTG(fail_sends=99), feed_of("3", "2", "1"))  # 2, 3번 글: 먼저 대기하던 진짜 미전송 알림
+        self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2", "3"])
+        dupes = [f"n{i}" for i in range(12, 0, -1)]  # 주소 변경 뒤 모호함 때문에 다시 새 글로 잡힌 12건
+        new = feed_of(*dupes, "1")
+        tg = FakeTG(updates=[msg(5, "/edit 1 url https://mirror.example/rss")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=new), mock.patch("rssbot.main.fetch_feed", return_value=new):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        titles = [t.split("title-")[1].split("<")[0] for _, t, is_html in tg.sent if is_html]
+        self.assertEqual(titles[:2], ["2", "3"])  # 먼저 대기하던 글이 맨 앞에서 전달
+        self.assertEqual(len(titles), main.MAX_PER_FEED)
+        tg2 = FakeTG()
+        self.run_bot(tg2, new)  # 남은 글은 다음 실행에서 이어서
+        titles += [t.split("title-")[1].split("<")[0] for _, t, is_html in tg2.sent if is_html]
+        self.assertEqual(titles, ["2", "3"] + [f"n{i}" for i in range(1, 13)])  # 하나도 빠지지 않고 오래된 순
+        self.assertNotIn("1", self.state()["pending"])
+        self.assertNotIn("1", self.state()["dropped"])
 
     def test_pending_overflow_is_counted_and_announced_not_silently_lost(self):
         self.run_bot(FakeTG(), feed_of("0"))
@@ -286,7 +311,7 @@ class RunTests(unittest.TestCase):
             tg = FakeTG()
             self.run_bot(tg, feed_of(*more))  # 복구
         texts = [t for _, t, _ in tg.sent]
-        self.assertIn("10건은 알림을 생략", texts[0])
+        self.assertIn("10건은 알리지 못했습니다", texts[0])  # 보관 한도로 버려진 건수 안내
         self.assertEqual(len(texts), 6)  # 요약 1 + 대기열 5건
         st = self.state()
         self.assertNotIn("1", st["pending"])
