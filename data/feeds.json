@@ -1,0 +1,10 @@
+{
+  "next_id": 2,
+  "feeds": [
+    {
+      "id": 1,
+      "name": "GeekNews",
+      "url": "https://news.hada.io/rss/news"
+    }
+  ]
+}
