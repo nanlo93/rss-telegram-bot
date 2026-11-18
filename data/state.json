@@ -1,5 +1,5 @@
 {
-  "update_offset": 241577163,
+  "update_offset": 241577164,
   "seen": {
     "1": [
       "https://news.hada.io/topic?id=37394",
@@ -27,5 +27,10 @@
   "fails": {},
   "commands_v": 1,
   "pending": {},
-  "dropped": {}
+  "dropped": {},
+  "outbox": [
+    {
+      "text": "구독 중인 RSS\n1. GeekNews\n   https://news.hada.io/rss/news"
+    }
+  ]
 }
