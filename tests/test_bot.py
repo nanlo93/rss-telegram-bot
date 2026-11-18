@@ -481,6 +481,66 @@ class RunTests(unittest.TestCase):
         run(tg, fetch_ok=True)  # 다시 확인되면 경고 상태를 지움
         self.assertNotIn("1", self.state()["fail_warn"])
 
+    def test_timeout_between_enqueue_and_state_change_never_duplicates_a_warning(self):
+        """안내를 발송함에 넣은 직후 시간 한도가 와도, 상태가 어긋나 같은 경고가 다음 실행에서 또 나가면 안 된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        sp = os.path.join(self.tmp.name, "state.json")
+        with open(sp) as f:
+            s = json.load(f)
+        s["fail_warn"] = {"1": {"state": "due", "text": "'GN' 피드를 12회 연속 확인하지 못했습니다."}}
+        with open(sp, "w") as f:
+            json.dump(s, f)
+        real = main._enqueue_notice
+        block = threading.Event()
+        self.addCleanup(block.set)
+
+        def slow_after_append(store, text):
+            ok = real(store, text)
+            block.wait(1.6)  # 적재 직후, 상태 전환 전에 한도(1초)가 도래
+            return ok
+
+        with mock.patch("rssbot.main._enqueue_notice", side_effect=slow_after_append), \
+             mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, FakeTG(fail_sends=9999), hard_limit=1)
+        self.assertFalse(ok)
+        st = self.state()
+        in_box = [b for b in st["outbox"] if "연속 확인하지 못했습니다" in b["text"]]
+        self.assertEqual(len(in_box), 1)
+        self.assertEqual(st["fail_warn"]["1"]["state"], "sent")  # 적재됐다면 상태도 함께 전환됨
+
+        tg = FakeTG()
+        for _ in range(2):
+            self.run_bot(tg, feed_of("1"))
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "연속 확인하지 못했습니다" in t]), 1)  # 총 한 번만 전달
+
+    def test_timeout_between_enqueue_and_clear_never_duplicates_a_lost_notice(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        sp = os.path.join(self.tmp.name, "state.json")
+        with open(sp) as f:
+            s = json.load(f)
+        s["lost"] = {"1": 4}
+        with open(sp, "w") as f:
+            json.dump(s, f)
+        real = main._enqueue_notice
+        block = threading.Event()
+        self.addCleanup(block.set)
+
+        def slow_after_append(store, text):
+            ok = real(store, text)
+            block.wait(1.6)
+            return ok
+
+        with mock.patch("rssbot.main._enqueue_notice", side_effect=slow_after_append), \
+             mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            main.run(self.tmp.name, "tok", OWNER, FakeTG(fail_sends=9999), hard_limit=1)
+        st = self.state()
+        self.assertEqual(len([b for b in st["outbox"] if "알리지 못했습니다" in b["text"]]), 1)
+        self.assertNotIn("1", st["lost"])  # 적재됐다면 기록도 함께 지워짐
+        tg = FakeTG()
+        for _ in range(2):
+            self.run_bot(tg, feed_of("1"))
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "4건" in t]), 1)
+
     def test_lost_record_is_cleaned_when_feed_is_removed(self):
         with tempfile.TemporaryDirectory() as d:
             store = Store(d)

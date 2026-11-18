@@ -355,10 +355,13 @@ def _enqueue_lost(store: Store) -> None:
         if fid not in names or not count:  # 구독이 삭제됐거나 의미 없는 값
             store.state["lost"].pop(fid, None)
             continue
-        if not _enqueue_notice(store, f"'{names[fid]}' 대기열이 가득 차 미뤄 둔 새 글 {count}건이 피드에서 밀려나 알리지 못했습니다."):
-            log(f"[{names[fid]}] 발송함의 안내 자리가 없어 밀려난 글 {count}건의 안내를 다음 실행으로 미룹니다")
-            continue
-        store.state["lost"].pop(fid, None)
+        # 발송함에 넣는 것과 기록을 지우는 것은 한 덩어리여야 한다. 그 사이에 시간 한도 신호가 끼면 안내는 나가는데 기록이 남아
+        # 다음 실행에서 같은 안내가 중복으로 나간다.
+        with _defer_timeout():
+            if not _enqueue_notice(store, f"'{names[fid]}' 대기열이 가득 차 미뤄 둔 새 글 {count}건이 피드에서 밀려나 알리지 못했습니다."):
+                log(f"[{names[fid]}] 발송함의 안내 자리가 없어 밀려난 글 {count}건의 안내를 다음 실행으로 미룹니다")
+                continue
+            store.state["lost"].pop(fid, None)
 
 
 def _enqueue_fail_warnings(store: Store) -> None:
@@ -370,10 +373,12 @@ def _enqueue_fail_warnings(store: Store) -> None:
             continue
         if warn.get("state") != "due":
             continue
-        if not _enqueue_notice(store, warn["text"]):
-            log(f"[{names[fid]}] 발송함의 안내 자리가 없어 연속 실패 경고를 다음 실행으로 미룹니다")
-            continue
-        store.state["fail_warn"][fid] = {"state": "sent"}
+        # 위와 같은 이유로 적재와 상태 전환(due -> sent)을 한 덩어리로 묶는다. 어긋나면 같은 경고가 중복으로 나간다.
+        with _defer_timeout():
+            if not _enqueue_notice(store, warn["text"]):
+                log(f"[{names[fid]}] 발송함의 안내 자리가 없어 연속 실패 경고를 다음 실행으로 미룹니다")
+                continue
+            store.state["fail_warn"][fid] = {"state": "sent"}
 
 
 def _enqueue_durable_notices(store: Store) -> None:
