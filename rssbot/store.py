@@ -25,7 +25,8 @@ def _dump(path: str, obj: dict) -> None:
 class Store:
     """feeds: {"next_id": int, "feeds": [{"id","name","url"}]}
     state: {"update_offset": int, "seen": {feed_id: [글 ID]}, "pending": {feed_id: [{"id","title","link"}]},
-    "dropped": {feed_id: 대기열 한도로 버려진 글 수}, "fails": {feed_id: int}, "commands_v": int}
+    "dropped": {feed_id: 대기열 한도로 버려진 글 수}, "fails": {feed_id: int}, "commands_v": int,
+    "outbox": [{"text": 보내야 할 명령 응답·경고 메시지}]}
     """
 
     def __init__(self, data_dir: str):
@@ -33,8 +34,8 @@ class Store:
         self.state_path = os.path.join(data_dir, "state.json")
         os.makedirs(data_dir, exist_ok=True)
         self.feeds = _load(self.feeds_path, {"next_id": 1, "feeds": []})
-        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "dropped": {}, "fails": {}, "commands_v": 0})
-        for key, default in (("seen", {}), ("pending", {}), ("dropped", {}), ("fails", {})):
+        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "dropped": {}, "fails": {}, "commands_v": 0, "outbox": []})
+        for key, default in (("seen", {}), ("pending", {}), ("dropped", {}), ("fails", {}), ("outbox", [])):
             self.state.setdefault(key, default)
 
     @property

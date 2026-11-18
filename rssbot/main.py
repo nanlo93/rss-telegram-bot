@@ -22,6 +22,7 @@ MAX_PER_FEED = 10  # 한 번에 알리는 최대 글 수 (초과분은 요약)
 MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피드당)
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
+MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최대 개수
 CHECKPOINT_TIMEOUT = 120
 
 
@@ -31,13 +32,19 @@ def log(msg: str) -> None:
 
 # ---------- 1단계: 텔레그램 명령 적용 ----------
 
-def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> list:
-    """getUpdates로 받은 명령을 상태에 반영하고, 보낼 응답 목록을 돌려준다. (전송은 하지 않음)
+def _enqueue(store: Store, texts: list) -> None:
+    """보낼 메시지를 상태의 outbox에 기록한다. 전송에 성공해야 지워지므로, 체크포인트·재시작을 넘어 보존된다."""
+    box = store.state["outbox"]
+    box.extend({"text": t} for t in texts)
+    del box[: max(0, len(box) - MAX_OUTBOX)]
+
+
+def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
+    """getUpdates로 받은 명령을 상태에 반영하고, 응답은 outbox에 적재한다. (전송은 하지 않음)
 
     지정된 채팅 외의 메시지는 무시한다. 응답은 체크포인트 이후에 보내므로, 강제 종료돼도 명령이 다시 적용되지 않는다.
     """
     offset = store.state.get("update_offset", 0)
-    replies = []
     for upd in tg.get_updates(offset):
         store.state["update_offset"] = upd["update_id"] + 1
         msg = upd.get("message") or {}
@@ -52,8 +59,7 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> list:
             log(f"명령 처리 오류: {type(e).__name__}: {e}")
             reply = "명령을 처리하다 오류가 발생했습니다."
         if reply:
-            replies.append(reply)
-    return replies
+            _enqueue(store, [reply])
 
 
 # ---------- 2단계: 피드 수집 (전송 없음) ----------
@@ -175,17 +181,26 @@ def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> bo
     return True
 
 
-def deliver(store: Store, tg: Telegram, owner_chat_id: str, messages: list) -> None:
-    """명령 응답·안내를 보낸 뒤 모든 피드의 pending을 전송한다. 피드 확인 성공 여부와 무관하게 재시도한다.
+def flush_outbox(store: Store, tg: Telegram, owner_chat_id: str) -> bool:
+    """outbox의 명령 응답·경고를 순서대로 보낸다. 성공한 것만 지우며, 실패하면 남은 것을 두고 False."""
+    box = store.state["outbox"]
+    while box:
+        try:
+            tg.send_message(owner_chat_id, box[0]["text"])
+        except Exception as e:
+            log(f"안내 전송 실패, 남은 {len(box)}건은 다음 실행에서 재시도: {type(e).__name__}: {e}")
+            return False
+        box.pop(0)
+    return True
+
+
+def deliver(store: Store, tg: Telegram, owner_chat_id: str) -> None:
+    """outbox를 비운 뒤 모든 피드의 pending을 전송한다. 피드 확인 성공 여부와 무관하게 재시도한다.
 
     텔레그램 자체가 불통이면(첫 실패) 나머지는 시도하지 않고 다음 실행으로 넘긴다.
     """
-    for text in messages:
-        try:
-            tg.send_message(owner_chat_id, text)
-        except Exception as e:
-            log(f"안내 전송 실패, 이번 실행의 전송을 중단: {type(e).__name__}: {e}")
-            return
+    if not flush_outbox(store, tg, owner_chat_id):
+        return
     for f in list(store.items):
         if not _deliver_feed(store, tg, owner_chat_id, f):
             return
@@ -219,24 +234,24 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
             except TelegramError as e:
                 log(f"명령 메뉴 등록 실패: {e}")
 
-        messages: list = []
         try:
-            messages += process_updates(store, tg, owner_chat_id)
+            process_updates(store, tg, owner_chat_id)
         except Exception as e:  # 명령 수신 실패와 무관하게 새 글 확인은 계속 진행
             log(f"명령 수신 처리 실패: {type(e).__name__}: {e}")
         if not _checkpoint(store, checkpoint):  # 명령 반영 + update offset을 먼저 확정 (재시작해도 명령이 재실행되지 않음)
             # 명령 결과를 저장소에 못 남긴 채 진행하면 다음 실행에서 같은 명령이 다시 적용될 수 있다(/remove 등).
             # 이번 실행은 여기서 멈추고, 워크플로 마지막 단계의 커밋 재시도에 맡긴다.
             log("명령 반영 상태를 저장소에 기록하지 못해 이번 실행을 중단합니다.")
+            flush_outbox(store, tg, owner_chat_id)  # 명령은 이미 반영됐으니 응답은 보낸다 (실패해도 outbox에 남아 재시도)
             return False
 
-        messages += collect_feeds(store)
+        _enqueue(store, collect_feeds(store))
         if not _checkpoint(store, checkpoint):  # 새 글을 pending으로 확정한 뒤에야 전송 (write-ahead)
             # 알림 자체는 보낸다(중복은 감수). 대신 실행을 실패로 표시해 저장 실패를 눈에 띄게 한다.
             ok = False
             log("새 글 상태를 저장소에 기록하지 못했습니다. 알림은 계속 전송합니다.")
 
-        deliver(store, tg, owner_chat_id, messages)
+        deliver(store, tg, owner_chat_id)
     finally:
         store.save()
     return ok

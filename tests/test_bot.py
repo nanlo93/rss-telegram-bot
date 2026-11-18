@@ -334,10 +334,43 @@ class RunTests(unittest.TestCase):
         with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
             ok = main.run(self.tmp.name, "tok", OWNER, tg, checkpoint=mock.Mock(side_effect=RuntimeError("push 실패")))
         self.assertFalse(ok)  # 실패로 보고
-        self.assertEqual(tg.sent, [])  # 응답도 알림도 보내지 않고 중단
+        self.assertEqual(len(tg.sent), 1)  # 명령 응답은 보낸다
+        self.assertIn("삭제했습니다", tg.sent[0][1])
         st = Store(self.tmp.name)
         self.assertEqual(st.items, [])  # 명령 결과와 offset은 디스크에 남아, 마지막 커밋 재시도가 올릴 수 있음
         self.assertEqual(st.state["update_offset"], 6)
+        self.assertEqual(st.state["outbox"], [])
+
+    def test_reply_survives_checkpoint_failure_and_send_failure(self):
+        """첫 체크포인트도, 응답 전송도 실패해도 응답은 outbox에 남아 다음 실행에서 전달된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        tg = FakeTG(updates=[msg(5, "/list")], fail_sends=99)
+        with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, tg, checkpoint=mock.Mock(side_effect=RuntimeError("push 실패")))
+        self.assertFalse(ok)
+        self.assertEqual(len(self.state()["outbox"]), 1)
+        self.assertEqual(self.state()["update_offset"], 6)  # 명령은 다시 실행되지 않도록 offset 보존
+
+        tg2 = FakeTG()  # 같은 update는 더 오지 않음
+        self.run_bot(tg2, feed_of("1"))
+        self.assertEqual(len(tg2.sent), 1)
+        self.assertIn("GN", tg2.sent[0][1])
+        self.assertEqual(self.state()["outbox"], [])
+
+    def test_reply_is_retried_when_telegram_is_down(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        self.run_bot(FakeTG(updates=[msg(5, "/list")], fail_sends=99), feed_of("1"))
+        self.assertEqual(len(self.state()["outbox"]), 1)
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("1"))
+        self.assertEqual(len(tg.sent), 1)
+        self.assertEqual(self.state()["outbox"], [])
+
+    def test_outbox_is_bounded(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        ups = [msg(i, "/list") for i in range(100, 100 + main.MAX_OUTBOX + 20)]
+        self.run_bot(FakeTG(updates=ups, fail_sends=9999), feed_of("1"))
+        self.assertEqual(len(self.state()["outbox"]), main.MAX_OUTBOX)
 
     def test_collect_checkpoint_failure_still_delivers_but_reports_failure(self):
         self.run_bot(FakeTG(), feed_of("1"))
