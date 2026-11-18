@@ -14,6 +14,8 @@ import queue
 import threading
 import time
 
+from urllib.parse import urlparse
+
 from . import commands
 from .feed import Entry, FeedError, fetch_feed
 from .store import SEEN_LIMIT, Store
@@ -27,6 +29,7 @@ SEND_INTERVAL = 0.4
 MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최대 개수
 MAX_UPDATES_PER_RUN = 25  # 한 번에 가져와 처리하는 텔레그램 명령 수 (나머지는 다음 실행에서)
 COLLECT_WORKERS = commands.MAX_FEEDS  # 허용된 구독 수만큼 일꾼을 둬, 응답 없는 피드가 앞에 몰려도 뒤 피드가 굶지 않게 함 (피드마다 전용 스레드)
+PER_HOST_LIMIT = 2  # 같은 호스트로 동시에 보내는 요청 수 (몰리면 429·차단을 맞아 정상 피드가 반복 누락됨)
 COLLECT_BUDGET = 150  # 수집 단계 전체 시간 한도(초). 넘기면 못 가져온 피드는 이번 실행에서 건너뜀
 CHECKPOINT_TIMEOUT = 120
 
@@ -145,17 +148,25 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
         log(f"[{f['name']}] 새 글 {len(new)}건 (전송 대기 {len(queue)}건)")
 
 
+def _host_of(url: str) -> str:
+    return (urlparse(url).hostname or "").lower()
+
+
 def _fetch_all(feeds: list) -> dict:
     """피드를 동시에 가져온다. {feed id: (Feed|None, 오류|None)} — 시간 한도 안에 끝나지 않은 피드는 빠진다.
 
-    일꾼 스레드는 daemon이라 응답 없는 서버가 남아 있어도 프로세스 종료를 막지 않는다.
-    일꾼 수가 피드 수 이상이므로(COLLECT_WORKERS = 구독 상한) 모든 피드가 시작 즉시 각자 스레드를 얻는다.
-    일꾼이 적으면 응답 없는 피드 몇 개가 일꾼을 다 붙잡아 뒤쪽 정상 피드가 매 실행 시작조차 못 하는 기아가 생긴다.
+    - 서로 다른 호스트는 모두 동시에 가져온다. 일꾼 수가 피드 수 이상이라(COLLECT_WORKERS = 구독 상한) 응답 없는
+      피드가 일꾼을 붙잡아 뒤쪽 정상 피드가 굶는 일이 없다.
+    - 같은 호스트는 PER_HOST_LIMIT개까지만 동시에 요청한다. 한 사이트의 피드 여러 개나 feedburner 같은 공용 호스트로
+      요청이 몰려 429·차단을 맞으면 정상 피드가 반복해서 누락되기 때문이다. 응답 없는 호스트의 피드끼리만 서로 기다리고
+      다른 호스트에는 영향이 없다.
+    - 일꾼 스레드는 daemon이라 응답 없는 서버가 남아 있어도 프로세스 종료를 막지 않는다.
     """
     todo: queue.Queue = queue.Queue()
     for f in feeds:
         todo.put(f)
     results: dict = {}
+    host_slots = {h: threading.Semaphore(PER_HOST_LIMIT) for h in {_host_of(f["url"]) for f in feeds}}
     deadline = time.monotonic() + COLLECT_BUDGET
 
     def worker() -> None:
@@ -164,7 +175,13 @@ def _fetch_all(feeds: list) -> dict:
                 f = todo.get_nowait()
             except queue.Empty:
                 return
-            results[f["id"]] = _fetch_safely(f["url"])
+            slot = host_slots[_host_of(f["url"])]
+            if not slot.acquire(timeout=max(0.0, deadline - time.monotonic())):
+                continue  # 같은 호스트의 다른 요청이 한도 시간까지 끝나지 않음 -> 이번 실행에서는 건너뜀
+            try:
+                results[f["id"]] = _fetch_safely(f["url"])
+            finally:
+                slot.release()
 
     threads = [threading.Thread(target=worker, daemon=True) for _ in range(min(COLLECT_WORKERS, len(feeds)))]
     for t in threads:

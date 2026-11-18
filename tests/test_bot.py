@@ -512,6 +512,68 @@ class RunTests(unittest.TestCase):
             self.assertEqual(len(fails), hang_n)  # 응답 없는 피드만 실패로 집계
         self.assertGreaterEqual(main.COLLECT_WORKERS, len(feeds) - 2)
 
+    def _setup_feeds(self, urls):
+        feeds = [{"id": i + 1, "name": f"F{i + 1}", "url": u} for i, u in enumerate(urls)]
+        with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
+            json.dump({"next_id": len(urls) + 1, "feeds": feeds}, f)
+        self.run_bot(FakeTG(), feed_of("1"))  # 기준선
+
+    def _run_tracking_concurrency(self, urls, hold=0.15):
+        self._setup_feeds(urls)
+        lock = threading.Lock()
+        cur = {"now": 0, "max": 0, "per_host": {}, "host_max": {}}
+
+        def fetch(url):
+            host = url.split("/")[2]
+            with lock:
+                cur["now"] += 1
+                cur["max"] = max(cur["max"], cur["now"])
+                cur["per_host"][host] = cur["per_host"].get(host, 0) + 1
+                cur["host_max"][host] = max(cur["host_max"].get(host, 0), cur["per_host"][host])
+            threading.Event().wait(hold)  # setUp이 time.sleep을 무력화하므로 Event.wait로 실제 대기
+            with lock:
+                cur["now"] -= 1
+                cur["per_host"][host] -= 1
+            return feed_of("2", "1")
+
+        tg = FakeTG()
+        with mock.patch("rssbot.main.fetch_feed", side_effect=fetch):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        return cur, tg
+
+    def test_same_host_requests_are_limited_but_all_feeds_are_fetched(self):
+        cur, tg = self._run_tracking_concurrency([f"https://same.example/rss{i}" for i in range(8)])
+        self.assertLessEqual(main.PER_HOST_LIMIT, 3)  # 제한이 사실상 풀리지 않았는지
+        self.assertLessEqual(cur["host_max"]["same.example"], main.PER_HOST_LIMIT)
+        self.assertGreaterEqual(cur["host_max"]["same.example"], 2)  # 제한 안에서는 병렬로 진행
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "title-2" in t]), 8)  # 하나도 누락되지 않음
+
+    def test_different_hosts_still_run_concurrently(self):
+        cur, tg = self._run_tracking_concurrency([f"https://h{i}.example/rss" for i in range(8)])
+        self.assertGreater(cur["max"], 3)  # 호스트가 다르면 호스트당 제한과 무관하게 동시에 진행
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "title-2" in t]), 8)
+
+    def test_hanging_host_does_not_block_other_hosts(self):
+        urls = [f"https://hang.example/rss{i}" for i in range(5)] + ["https://ok.example/rss"]
+        self._setup_feeds(urls)
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        def fetch(url):
+            if "hang.example" in url:
+                release.wait(10)
+            return feed_of("2", "1")
+
+        tg = FakeTG()
+        started = time.monotonic()
+        with mock.patch("rssbot.main.fetch_feed", side_effect=fetch), mock.patch("rssbot.main.COLLECT_BUDGET", 0.5):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        self.assertLess(time.monotonic() - started, 5)
+        notified = [t for _, t, _ in tg.sent if "title-2" in t]
+        self.assertEqual(len(notified), 1)
+        self.assertIn("F6", notified[0])  # 다른 호스트의 정상 피드는 영향 없음
+        self.assertEqual(len(self.state()["fails"]), 5)  # 응답 없는 호스트의 피드만 실패로 집계
+
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
             json.dump({"next_id": 3, "feeds": [
