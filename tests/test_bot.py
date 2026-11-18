@@ -132,6 +132,18 @@ class CommandTests(unittest.TestCase):
         self.assertIn("새이름", r)
         self.assertIn("/add https://ex.com/rss 새이름", r)  # 번호 없이 바로 복구할 수 있는 명령
 
+    def test_empty_feeds_are_rejected_on_add_and_edit(self):
+        with mock.patch("rssbot.commands.fetch_feed", return_value=Feed("빈 피드", [])):
+            r = commands.handle("/add https://ex.com/rss", self.store)
+            self.assertIn("글이 하나도 없는", r)
+            self.assertEqual(self.store.items, [])
+        commands.handle("/add https://ex2.com/rss 둘째", self.store)
+        with mock.patch("rssbot.commands.fetch_feed", return_value=Feed("빈 피드", [])):
+            r2 = commands.handle("/edit 1 url https://ex.com/new", self.store)
+        self.assertIn("글이 하나도 없는", r2)
+        self.assertEqual(self.store.items[0]["url"], "https://ex2.com/rss")  # 바뀌지 않음
+        self.assertNotIn(str(self.store.items[0]["id"]), self.store.state["rebase"])
+
     def test_default_name_is_feed_title(self):
         commands.handle("/add https://ex.com/rss", self.store)
         self.assertEqual(self.store.items[0]["name"], "Fetched")
@@ -878,6 +890,54 @@ class RunTests(unittest.TestCase):
         st.state["rebase"]["1"] = True
         st.remove(st.items[0])
         self.assertNotIn("1", st.state["rebase"])
+
+    def test_empty_response_never_creates_empty_baseline_and_recovery_does_not_flood(self):
+        """비어 있는 응답을 기준선으로 삼으면, 복구된 뒤 기존 글이 전부 새 글로 쏟아진다."""
+        tg = FakeTG()
+        self.run_bot(tg, Feed("T", []))  # 처음 보는 피드가 글 없이 응답 (장애로 비어 보임)
+        self.assertNotIn("1", self.state()["seen"])  # 빈 기준선을 만들지 않음
+        self.assertEqual(tg.sent, [])
+        self.run_bot(tg, feed_of("5", "4", "3", "2", "1"))  # 복구
+        self.assertEqual(tg.sent, [])  # 기존 글은 조용히 기준선
+        self.assertEqual(len(self.state()["seen"]["1"]), 5)
+        self.run_bot(tg, feed_of("6", "5", "4", "3", "2", "1"))
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "title-6" in t]), 1)  # 이후 새 글만 알림
+
+    def test_transient_empty_response_keeps_existing_record(self):
+        self.run_bot(FakeTG(), feed_of("2", "1"))
+        self.run_bot(FakeTG(), Feed("T", []))  # 일시적으로 빈 응답
+        self.assertEqual(self.state()["seen"]["1"], ["2", "1"])
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("3", "2", "1"))  # 복구
+        self.assertEqual(len(tg.sent), 1)  # 새 글(3)만, 기존 글 중복 없음
+        self.assertIn("title-3", tg.sent[0][1])
+
+    def test_url_change_judgement_is_deferred_while_new_feed_is_empty(self):
+        self.run_bot(FakeTG(), feed_of("2", "1"))
+        with mock.patch("rssbot.commands.fetch_feed", return_value=feed_of("y", "x")), \
+             mock.patch("rssbot.main.fetch_feed", return_value=Feed("T", [])):
+            main.run(self.tmp.name, "tok", OWNER, FakeTG(updates=[msg(5, "/edit 1 url https://other.example/rss")]))
+        st = self.state()
+        self.assertTrue(st["rebase"]["1"])  # 판단을 미루고 표시 유지
+        self.assertEqual(st["seen"]["1"], ["2", "1"])  # 기존 기록도 그대로
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("y", "x"))  # 글이 보이면 그때 판단: 겹치지 않음 = 다른 피드
+        self.assertEqual(tg.sent, [])
+        self.assertEqual(self.state()["seen"]["1"], ["y", "x"])
+        self.assertNotIn("1", self.state()["rebase"])
+
+    def test_http_to_https_mirror_is_recognized_as_same_feed_and_only_new_posts_are_sent(self):
+        """ID에 스킴·www가 들어 있는 피드는 주소를 바꾸면 ID가 하나도 겹치지 않아 다른 피드로 오판되기 쉽다."""
+        old = Feed("T", [Entry(id=f"http://www.ex.com/p/{i}/", title=f"글{i}", link=f"http://www.ex.com/p/{i}") for i in (2, 1)])
+        new = Feed("T", [Entry(id=f"https://ex.com/p/{i}", title=f"글{i}", link=f"https://ex.com/p/{i}") for i in (3, 2, 1)])
+        self.run_bot(FakeTG(), old)
+        tg = FakeTG(updates=[msg(5, "/edit 1 url https://ex.com/rss")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=new), mock.patch("rssbot.main.fetch_feed", return_value=new):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        texts = [t for _, t, is_html in tg.sent if is_html]  # 글 알림만 (명령 응답은 평문)
+        self.assertEqual(len(texts), 1)  # 3번 글만. 1·2번은 이미 본 글
+        self.assertIn("글3", texts[0])
+        self.assertEqual(len(self.state()["seen"]["1"]), 5)  # 이후 비교는 새 ID로 이어지도록 기록은 합침
 
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:

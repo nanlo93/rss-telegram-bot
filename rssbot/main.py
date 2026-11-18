@@ -12,6 +12,7 @@ import shlex
 import subprocess
 import sys
 import queue
+import re
 import signal
 import threading
 import time
@@ -135,6 +136,13 @@ def _queue_item(e: Entry) -> dict:
     return {"id": e.id, "title": e.title, "link": e.link}
 
 
+def _norm_id(raw: str) -> str:
+    """글 ID를 '같은 글인가' 비교용으로 정규화한다: 스킴, 앞의 www., 끝 슬래시, 대소문자 차이를 무시한다."""
+    s = re.sub(r"^[a-z][a-z0-9+.\-]*://", "", raw.strip().lower())
+    s = re.sub(r"^www\.", "", s)
+    return s.rstrip("/")
+
+
 def _persist_pending(store: Store, fid: str, items: list) -> None:
     if items:
         store.state["pending"][fid] = items
@@ -166,16 +174,35 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
     current_ids = [e.id for e in parsed.entries]
     old = store.state["seen"].get(fid)
     url_changed = store.state["rebase"].pop(fid, None)  # /edit url 직후의 첫 수집 (가져오기에 실패했다면 아직 남아 있음)
-    if old is None or (url_changed and not (set(current_ids) & set(old))):
-        # 처음 보는 피드이거나, 주소가 바뀐 뒤 새 주소의 글이 기존 기록과 하나도 겹치지 않는 경우(= 다른 피드)는
-        # 기존 글을 알리지 않고 기준선만 잡는다. 겹치면 같은 피드(주소만 다름)이므로 아래의 정상 처리로 새 글을 알린다.
+
+    if not current_ids and (not old or url_changed):
+        # 글이 하나도 없는 응답으로는 기준선도, '같은 피드인가' 판단도 할 수 없다. 장애로 잠깐 비어 있는 것일 수 있는데
+        # 여기서 빈 기준선을 잡으면 복구된 뒤 기존 글이 전부 새 글로 쏟아진다. 판단을 글이 보일 때까지 미룬다.
+        if url_changed:
+            store.state["rebase"][fid] = True
+        log(f"[{f['name']}] 글이 없는 응답이라 기준선·주소 변경 판단을 미룹니다")
+        return
+
+    pending = store.state["pending"].get(fid, [])
+    known = set(old or ()) | {p["id"] for p in pending}
+
+    if not old:  # 처음 보는 피드(또는 기록이 비어 있는 피드)는 기준선만 잡고 알리지 않음
         store.state["seen"][fid] = current_ids[:SEEN_LIMIT]
         log(f"[{f['name']}] 기준선 등록: {len(current_ids)}건")
         return
 
-    pending = store.state["pending"].get(fid, [])
-    known = set(old) | {p["id"] for p in pending}
-    new = [_queue_item(e) for e in reversed(parsed.entries) if e.id not in known]  # 오래된 글부터
+    if url_changed:
+        # 새 주소의 글이 기존 기록(·미전송 글)과 겹치면 같은 피드(주소만 다름)라서 새 글을 알리고, 하나도 겹치지 않으면 다른
+        # 피드라서 기존 글을 알리지 않고 기준선만 잡는다. http→https·www·끝 슬래시 차이로 글 ID가 달라지는 피드도
+        # 같은 피드로 알아보도록, 이 첫 비교에서는 그 차이를 무시한다.
+        norm_known = {_norm_id(i) for i in known}
+        if not ({_norm_id(i) for i in current_ids} & norm_known):
+            store.state["seen"][fid] = current_ids[:SEEN_LIMIT]
+            log(f"[{f['name']}] 주소가 바뀐 뒤 다른 피드로 판단해 기준선 등록: {len(current_ids)}건")
+            return
+        new = [_queue_item(e) for e in reversed(parsed.entries) if _norm_id(e.id) not in norm_known]  # 오래된 글부터
+    else:
+        new = [_queue_item(e) for e in reversed(parsed.entries) if e.id not in known]  # 오래된 글부터
 
     # 관측한 글은 seen에 기록하고, 아직 알리지 못한 글은 내용째 pending에 보관한다.
     # (이후 피드에서 그 글이 사라져도, 전송이 늦어져도 누락되지 않음)

@@ -64,6 +64,10 @@ def unsafe_url_reason(url: str):
     return None
 
 
+_EMPTY_FEED_MESSAGE = ("글이 하나도 없는 피드는 등록할 수 없습니다. 새 글은 '이미 본 글'과 비교해서 판단하는데, 비어 있는 상태를 기준으로 삼으면 "
+                       "나중에 기존 글이 전부 새 글로 발송됩니다. (일시적으로 비어 보이는 것일 수 있으니 잠시 뒤 다시 시도해 주세요)")
+
+
 def _reject_message(reason: str) -> str:
     return f"{reason}. 이 저장소는 공개라 구독 URL이 그대로 노출되므로, 인증 정보가 든 URL은 등록할 수 없습니다."
 
@@ -154,6 +158,8 @@ def cmd_add(store: Store, args: list, prefetched=None) -> str:
         feed = _fetch(prefetched, url)
     except FeedError as e:
         return f"RSS를 확인하지 못했습니다: {redact(e)}"
+    if not feed.entries:
+        return _EMPTY_FEED_MESSAGE
     added = store.add(name or feed.title or url, url, [e.id for e in feed.entries])
     return f"추가했습니다: {len(store.items)}. {added['name']}\n기존 글 {len(feed.entries)}건은 알리지 않고, 이후 새 글부터 알려드립니다."
 
@@ -185,6 +191,8 @@ def cmd_edit(store: Store, args: list, prefetched=None) -> str:
         # 구독 번호는 목록이 바뀌면 달라진다. 안내대로 다시 보냈을 때 다른 구독에 적용되지 않도록 대상을 보여주고 확인을 권한다.
         return (f"{number}번 '{target['name']}'의 주소를 바꾸지 못했습니다: {redact(e)}\n"
                 "구독 번호는 목록이 바뀌면 달라질 수 있으니, 다시 보내기 전에 /list 로 번호를 확인해 주세요.")
+    if not feed.entries:
+        return _EMPTY_FEED_MESSAGE
     old_url, target["url"] = target["url"], value
     store.mark_url_changed(target)
     return (f"{number}번 '{target['name']}'의 주소를 바꿨습니다.\n이전: {old_url}\n"
