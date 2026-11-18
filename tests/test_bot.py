@@ -712,6 +712,25 @@ class RunTests(unittest.TestCase):
         self.assertEqual([f["name"] for f in Store(self.tmp.name).items], ["GN", "새피드"])
         self.assertEqual(len([1 for _, t, _ in tg2.sent if "추가했습니다" in t]), 1)
 
+    def test_malformed_url_command_does_not_block_following_commands(self):
+        """해석할 수 없는 URL 하나가 예외로 offset 전진을 막으면, 같은 명령이 매 실행 실패하며 뒤의 명령이 영영 막힌다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        ups = [msg(5, "/add http://[::1/rss"), msg(6, "/edit 1 url http://[bad"), msg(7, "/list")]
+        tg = FakeTG(updates=ups)
+        with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        texts = [t for _, t, _ in tg.sent]
+        self.assertEqual(len(texts), 3)
+        self.assertIn("http://", texts[0])  # 잘못된 URL 안내
+        self.assertIn("구독 중인 RSS", texts[2])  # 뒤의 /list도 처리됨
+        self.assertEqual(self.state()["update_offset"], 8)  # 세 명령 모두 넘어감
+
+    def test_prefetch_failure_is_swallowed_and_never_leaks_out(self):
+        with mock.patch("rssbot.commands.fetch_feed", side_effect=RuntimeError("예기치 못한 오류")):
+            self.assertEqual(commands.prefetch("/add https://ex.com/rss"), {})
+        with mock.patch("rssbot.commands._target_url", side_effect=ValueError("boom")):
+            self.assertEqual(commands.prefetch("/add https://ex.com/rss"), {})
+
     def test_prefetched_result_is_used_and_rejected_urls_are_never_contacted(self):
         feed = feed_of("a", "b")
         with mock.patch("rssbot.commands.fetch_feed", side_effect=AssertionError("다시 가져오면 안 됨")):

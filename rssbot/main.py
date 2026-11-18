@@ -108,7 +108,11 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
         is_owner = chat_id == owner_chat_id
         # 1) 네트워크가 필요한 검증(/add·/edit url의 피드 가져오기)은 상태를 바꾸는 구간 밖에서 먼저 한다.
         #    여기는 시간 한도 신호로 끊을 수 있다. 끊겨도 아직 아무것도 바꾸지 않았으니 명령은 다음 실행에서 다시 처리된다.
-        prefetched = commands.prefetch(text) if is_owner else {}
+        try:
+            prefetched = commands.prefetch(text) if is_owner else {}
+        except Exception as e:  # 한 명령의 사전 검증 실패가 뒤의 명령을 막지 않게 한다 (offset은 아래에서 어떤 경우든 넘어감)
+            log(f"명령 사전 검증 오류: {type(e).__name__}: {e}")
+            prefetched = {}
         # 2) offset 전진·명령 적용·응답 적재는 한 덩어리로 끝나야 한다. 중간에 끊기면 offset만 넘어가 명령이 사라지거나,
         #    명령은 적용됐는데 offset이 안 넘어가 /remove 같은 명령이 재실행된다. 네트워크가 없어 보류해도 순간이다.
         with _defer_timeout():

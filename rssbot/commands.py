@@ -29,7 +29,10 @@ HELP = """RSS Pinger 사용법
 
 
 def _valid_url(url: str) -> bool:
-    p = urlparse(url)
+    try:
+        p = urlparse(url)
+    except ValueError:  # 'http://[::1/x' 처럼 해석할 수 없는 URL
+        return False
     return p.scheme in ("http", "https") and bool(p.netloc)
 
 
@@ -46,8 +49,12 @@ def unsafe_url_reason(url: str):
 
     구독 목록(data/feeds.json)은 공개 저장소에 그대로 커밋되므로, 비밀 토큰이 든 URL은 등록하지 않는다.
     """
-    p = urlparse(url)
-    if p.username or p.password:
+    try:
+        p = urlparse(url)
+        has_userinfo = bool(p.username or p.password)
+    except ValueError:
+        return "URL을 해석할 수 없습니다"
+    if has_userinfo:
         return "URL에 아이디·비밀번호가 들어 있습니다"
     key = find_secret_param(url)  # 쿼리뿐 아니라 ';' 구분 파라미터, 경로 파라미터, fragment까지 검사
     if key:
@@ -78,13 +85,18 @@ def prefetch(text: str) -> dict:
     네트워크 호출은 오래 걸릴 수 있어서, 상태를 바꾸는 구간(시간 한도 신호를 보류하는 구간) 밖에서 먼저 해 두어야
     실행 전체 시간 한도가 이 호출을 끊을 수 있다. handle()은 여기서 받은 결과를 쓴다.
     """
-    url = _target_url(text)
-    if not url or not _valid_url(url) or unsafe_url_reason(url):
-        return {}  # handle()이 어차피 거부할 URL은 접속하지 않는다
     try:
-        return {url: (fetch_feed(url), None)}
-    except FeedError as e:
-        return {url: (None, e)}
+        url = _target_url(text)
+        if not url or not _valid_url(url) or unsafe_url_reason(url):
+            return {}  # handle()이 어차피 거부할 URL은 접속하지 않는다
+        try:
+            return {url: (fetch_feed(url), None)}
+        except FeedError as e:
+            return {url: (None, e)}
+    except Exception:
+        # 어떤 이유로든 미리 가져오지 못하면 빈 결과를 돌려준다. handle()이 직접 검증해 오류 응답을 만든다.
+        # (여기서 예외가 밖으로 나가면 offset이 넘어가지 않아 같은 명령이 매번 실패하며 뒤의 명령을 막는다)
+        return {}
 
 
 def _fetch(prefetched, url: str):

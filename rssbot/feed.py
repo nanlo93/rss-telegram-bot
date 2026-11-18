@@ -69,16 +69,19 @@ def clean_id(raw: str) -> str:
     """seen·pending에 기록되는 글 ID를 공개해도 안전하게 만든다.
 
     ID는 guid나 permalink인 경우가 많아 링크처럼 토큰·세션 ID가 실릴 수 있다. 중복 판별에는 값이 안정적이기만 하면
-    되므로, URL 형태이면서 인증 정보가 의심되면 내용 해시로 대체한다. (그렇지 않은 ID는 그대로 둬서 이미 기록된
-    ID와 일치를 유지한다. fragment 등을 지우면 서로 다른 글의 ID가 합쳐질 수 있어 링크처럼 정리하지 않는다.)
+    되므로, 인증 정보가 의심되면 내용 해시로 대체한다. 절대 URL뿐 아니라 상대 경로('/post?token=..'), 스킴 없는 주소
+    ('//host/p?sig=..'), 'key=value' 꼴 문자열도 검사한다.
+    (의심스럽지 않은 ID는 그대로 둬서 이미 기록된 ID와 일치를 유지한다. fragment 등을 지우면 서로 다른 글의 ID가
+    합쳐질 수 있어 링크처럼 정리하지 않는다.)
     """
-    if "://" not in raw:
-        return raw
     try:
         p = urlparse(raw)
         sensitive = bool(p.username or p.password or find_secret_param(raw))
     except ValueError:
         sensitive = True
+    if not sensitive and "=" in raw:
+        # urlparse가 쿼리로 인식하지 못하는 꼴('token=abc&id=1' 등)도 키 이름으로 확인한다.
+        sensitive = any(k.lower().endswith(SECRET_PARAM_SUFFIXES) for k in _param_keys(raw))
     if sensitive:
         return "sha1:" + hashlib.sha1(raw.encode("utf-8")).hexdigest()[:20]
     return raw

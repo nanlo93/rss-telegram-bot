@@ -88,6 +88,28 @@ class LinkAndBodyLimitTests(unittest.TestCase):
             self.assertEqual(cid, clean_id(secret))  # 같은 ID는 항상 같은 값 (중복 판별용)
         self.assertNotEqual(clean_id("https://ex.com/p?token=1"), clean_id("https://ex.com/p?token=2"))
 
+    def test_relative_and_schemeless_ids_and_links_are_cleaned_too(self):
+        from rssbot.feed import clean_id
+        for rel in ("/post?id=1&token=abc", "post?sig=abc", "//ex.com/p?token=1", "?p=1&session=zzz",
+                    "token=abc&id=1", "/a;jsessionid=abc/b", "//u:pw@ex.com/p"):
+            cid = clean_id(rel)
+            self.assertTrue(cid.startswith("sha1:"), rel)
+            self.assertNotIn("abc", cid)
+        for plain in ("/post?id=1", "post/1", "?p=123", "tag:ex.com,2026:post/1", "urn:uuid:123", "id=1&page=2"):
+            self.assertEqual(clean_id(plain), plain, plain)
+        self.assertEqual(clean_link("/post?id=1&token=abc"), "/post?id=1")
+        self.assertEqual(clean_link("//ex.com/p?id=1&token=abc#x"), "//ex.com/p?id=1")
+        self.assertEqual(clean_link("post?id=1&utm_source=x&sig=abc"), "post?id=1")
+
+    def test_relative_guid_and_link_secrets_never_reach_parsed_entries(self):
+        xml = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
+        <item><title>A</title><link>/a?id=1&amp;token=SECRET</link><guid>/a?id=1&amp;token=SECRET</guid></item>
+        <item><title>B</title><link>b?sig=SECRET</link></item>
+        <item><title>C</title><guid>//ex.com/c?session=SECRET</guid></item></channel></rss>"""
+        for e in parse_feed(xml).entries:
+            self.assertNotIn("SECRET", e.id)
+            self.assertNotIn("SECRET", e.link)
+
     def test_parsed_entry_ids_never_carry_secrets(self):
         xml = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
         <item><title>A</title><link>https://ex.com/a?id=1&amp;token=SECRET</link><guid>https://ex.com/a?id=1&amp;token=SECRET</guid></item>
