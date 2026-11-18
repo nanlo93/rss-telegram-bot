@@ -483,6 +483,35 @@ class RunTests(unittest.TestCase):
         self.assertEqual(box[0]["text"], "응답 0")  # 가장 오래된 응답이 그대로 남아 있음
         self.assertFalse(any("연속 확인하지 못했습니다" in b["text"] for b in box))
 
+    def test_hanging_feeds_in_front_do_not_starve_later_feeds(self):
+        """응답 없는 피드가 앞에 많아도(일꾼 수보다 많아도) 뒤쪽 정상 피드는 매번 확인되어야 한다."""
+        hang_n = 12
+        feeds = [{"id": i, "name": f"HANG{i}", "url": f"https://hang{i}/rss"} for i in range(1, hang_n + 1)]
+        feeds += [{"id": hang_n + 1, "name": "OK1", "url": "https://ok1/rss"},
+                  {"id": hang_n + 2, "name": "OK2", "url": "https://ok2/rss"}]
+        with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
+            json.dump({"next_id": hang_n + 3, "feeds": feeds}, f)
+        self.run_bot(FakeTG(), feed_of("1"))  # 전체 기준선
+
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        def fetch(url):
+            if "hang" in url:
+                release.wait(10)
+            return feed_of("2", "1")
+
+        for _ in range(2):  # 매 실행 반복돼도 계속 확인되어야 함
+            tg = FakeTG()
+            with mock.patch("rssbot.main.fetch_feed", side_effect=fetch), mock.patch("rssbot.main.COLLECT_BUDGET", 0.5):
+                main.run(self.tmp.name, "tok", OWNER, tg)
+            names = sorted(t.split("\n")[0] for _, t, _ in tg.sent if "title-2" in t)
+            if _ == 0:
+                self.assertEqual(names, ["<b>OK1</b>", "<b>OK2</b>"])
+            fails = self.state()["fails"]
+            self.assertEqual(len(fails), hang_n)  # 응답 없는 피드만 실패로 집계
+        self.assertGreaterEqual(main.COLLECT_WORKERS, len(feeds) - 2)
+
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
             json.dump({"next_id": 3, "feeds": [

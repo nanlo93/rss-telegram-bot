@@ -26,7 +26,7 @@ FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5
 SEND_INTERVAL = 0.4
 MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최대 개수
 MAX_UPDATES_PER_RUN = 25  # 한 번에 가져와 처리하는 텔레그램 명령 수 (나머지는 다음 실행에서)
-COLLECT_WORKERS = 8  # 피드를 동시에 가져오는 수
+COLLECT_WORKERS = commands.MAX_FEEDS  # 허용된 구독 수만큼 일꾼을 둬, 응답 없는 피드가 앞에 몰려도 뒤 피드가 굶지 않게 함 (피드마다 전용 스레드)
 COLLECT_BUDGET = 150  # 수집 단계 전체 시간 한도(초). 넘기면 못 가져온 피드는 이번 실행에서 건너뜀
 CHECKPOINT_TIMEOUT = 120
 
@@ -149,6 +149,8 @@ def _fetch_all(feeds: list) -> dict:
     """피드를 동시에 가져온다. {feed id: (Feed|None, 오류|None)} — 시간 한도 안에 끝나지 않은 피드는 빠진다.
 
     일꾼 스레드는 daemon이라 응답 없는 서버가 남아 있어도 프로세스 종료를 막지 않는다.
+    일꾼 수가 피드 수 이상이므로(COLLECT_WORKERS = 구독 상한) 모든 피드가 시작 즉시 각자 스레드를 얻는다.
+    일꾼이 적으면 응답 없는 피드 몇 개가 일꾼을 다 붙잡아 뒤쪽 정상 피드가 매 실행 시작조차 못 하는 기아가 생긴다.
     """
     todo: queue.Queue = queue.Queue()
     for f in feeds:
