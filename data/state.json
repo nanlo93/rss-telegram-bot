@@ -31,5 +31,6 @@
   "commands_v": 1,
   "pending": {},
   "dropped": {},
-  "outbox": []
+  "outbox": [],
+  "rebase": {}
 }
