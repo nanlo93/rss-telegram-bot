@@ -16,7 +16,8 @@ permissions:
 jobs:
   poll:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 실행 전체 한도(420초) + 명령 처리 중 보류된 신호(최대 ~50초) + 체크아웃 + 최종 커밋(최대 3분)을 넉넉히 포함
+    timeout-minutes: 15
     steps:
       # 기본 checkout은 실행이 큐에 들어간 시점의 SHA를 쓴다. 직렬화(concurrency)로 대기하다 시작하면 앞선 실행의
       # 최종 커밋이 빠진 오래된 상태를 읽어 이미 보낸 알림을 다시 보내므로, 시작 시점의 브랜치 최신 커밋을 받는다.

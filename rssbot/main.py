@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import contextlib
 import html
 import os
 import shlex
@@ -46,6 +47,24 @@ class RunTimeout(BaseException):
     """실행 전체 시간 한도 초과. Exception이 아니라서 곳곳의 'except Exception'에 삼켜지지 않고, finally(상태 저장)는 실행된다."""
 
 
+@contextlib.contextmanager
+def _defer_timeout():
+    """이 블록이 끝날 때까지 시간 한도 신호(SIGALRM)를 보류했다가, 끝난 뒤에 전달한다.
+
+    SIGALRM은 어느 줄에서든 실행을 끊을 수 있어서, 상태를 여러 군데 고치는 도중에 끊기면 (예: seen에는 기록됐는데
+    pending은 아직) 반쯤 바뀐 상태가 저장돼 글이나 명령이 영영 사라진다. 상태를 바꾸는 구간은 이 블록으로 감싸 원자적으로 만든다.
+    네트워크 호출처럼 오래 걸릴 수 있는 구간에는 쓰지 않는다.
+    """
+    if not hasattr(signal, "pthread_sigmask") or threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    old = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
+    try:
+        yield
+    finally:
+        signal.pthread_sigmask(signal.SIG_SETMASK, old)  # 보류된 신호는 여기서 전달된다 (블록 안의 변경은 모두 끝난 뒤)
+
+
 # ---------- 1단계: 텔레그램 명령 적용 ----------
 
 def _enqueue(store: Store, texts: list, droppable: bool = False) -> None:
@@ -83,20 +102,23 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
         if time.monotonic() >= deadline:  # 명령(/add 검증 등)이 오래 걸려도 체크포인트·전송 시간을 남긴다
             log("명령 처리 시간 한도에 도달해 나머지 명령은 다음 실행에서 처리합니다.")
             break
-        store.state["update_offset"] = upd["update_id"] + 1
-        msg = upd.get("message") or {}
-        chat_id = str((msg.get("chat") or {}).get("id", ""))
-        text = msg.get("text") or ""
-        if chat_id != owner_chat_id:
-            log(f"무시: 허용되지 않은 채팅의 메시지 (update {upd['update_id']})")
-            continue
-        try:
-            reply = commands.handle(text, store)
-        except Exception as e:  # 한 명령의 오류가 전체 실행을 막지 않도록
-            log(f"명령 처리 오류: {type(e).__name__}: {e}")
-            reply = "명령을 처리하다 오류가 발생했습니다."
-        if reply:
-            _enqueue(store, [reply])
+        # offset 전진·명령 적용·응답 적재는 한 덩어리로 끝나야 한다. 중간에 끊기면 offset만 넘어가 명령이 사라지거나,
+        # 명령은 적용됐는데 offset이 안 넘어가 /remove 같은 명령이 재실행된다. (/add 검증의 네트워크는 URL당 최대 ~50초)
+        with _defer_timeout():
+            store.state["update_offset"] = upd["update_id"] + 1
+            msg = upd.get("message") or {}
+            chat_id = str((msg.get("chat") or {}).get("id", ""))
+            text = msg.get("text") or ""
+            if chat_id != owner_chat_id:
+                log(f"무시: 허용되지 않은 채팅의 메시지 (update {upd['update_id']})")
+                continue
+            try:
+                reply = commands.handle(text, store)
+            except Exception as e:  # 한 명령의 오류가 전체 실행을 막지 않도록
+                log(f"명령 처리 오류: {type(e).__name__}: {e}")
+                reply = "명령을 처리하다 오류가 발생했습니다."
+            if reply:
+                _enqueue(store, [reply])
 
 
 # ---------- 2단계: 피드 수집 (전송 없음) ----------
@@ -185,6 +207,8 @@ def _fetch_all(feeds: list) -> dict:
     deadline = time.monotonic() + COLLECT_BUDGET
 
     def worker() -> None:
+        if hasattr(signal, "pthread_sigmask"):  # 시간 한도 신호는 항상 메인 스레드로 전달되게 한다
+            signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
         while time.monotonic() < deadline:
             try:
                 f = todo.get_nowait()
@@ -220,7 +244,8 @@ def collect_feeds(store: Store) -> list:
     for f in feeds:
         result = fetched.get(f["id"], (None, FeedError("시간 초과 (이번 실행에서는 건너뜀)")))
         try:
-            _collect_one(store, f, notices, result)
+            with _defer_timeout():  # seen·pending·dropped·fails를 함께 고치므로 중간에 끊기면 글이 사라진다
+                _collect_one(store, f, notices, result)
         except Exception as e:  # 한 피드의 예기치 못한 오류가 다른 피드 확인을 막지 않도록
             log(f"[{f['name']}] 처리 중 오류: {type(e).__name__}: {e}")
     return notices

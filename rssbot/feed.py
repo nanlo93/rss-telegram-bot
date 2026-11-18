@@ -55,7 +55,9 @@ def find_secret_param(url: str):
         p = urlparse(url)
     except ValueError:
         return None
-    for part in (p.query, p.params, p.fragment):
+    # 경로 파라미터(;a=b)는 마지막 조각만 urlparse가 params로 떼어 주므로, 나머지 조각은 직접 확인한다.
+    segment_params = [seg.split(";", 1)[1] for seg in p.path.split("/") if ";" in seg]
+    for part in (p.query, p.params, p.fragment, *segment_params):
         for key in _param_keys(part):
             if key.lower().endswith(SECRET_PARAM_SUFFIXES):
                 return key
@@ -73,14 +75,16 @@ def clean_link(url: str) -> str:
     except ValueError:  # 잘못된 URL
         return ""
     netloc = p.netloc.rsplit("@", 1)[-1]
-    if not (p.query or p.params or p.fragment) and netloc == p.netloc:
+    # 경로 중간 조각의 ';세션ID' 도 지운다. (urlparse의 params는 마지막 조각 것만 분리해 줌)
+    path = "/".join(seg.split(";", 1)[0] for seg in p.path.split("/"))
+    if not (p.query or p.params or p.fragment) and netloc == p.netloc and path == p.path:
         return url
     q = [
         (k, v)
         for k, v in parse_qsl(p.query.replace(";", "&"), keep_blank_values=True)
         if not k.lower().startswith("utm_") and not k.lower().endswith(SECRET_PARAM_SUFFIXES)
     ]
-    return urlunparse(p._replace(netloc=netloc, params="", query=urlencode(q), fragment=""))
+    return urlunparse(p._replace(netloc=netloc, path=path, params="", query=urlencode(q), fragment=""))
 
 
 def _atom_link(entry) -> str:

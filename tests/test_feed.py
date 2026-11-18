@@ -72,6 +72,13 @@ class LinkAndBodyLimitTests(unittest.TestCase):
         self.assertEqual(clean_link("https://ex.com/a?id=1&page=2"), "https://ex.com/a?id=1&page=2")  # 무해한 링크는 그대로
         self.assertEqual(clean_link("http://[::1/bad"), "")  # 해석할 수 없는 URL
 
+    def test_clean_link_and_detection_cover_every_path_segment(self):
+        self.assertEqual(clean_link("https://ex.com/a;jsessionid=abc/b/c;x=1/d?id=1"), "https://ex.com/a/b/c/d?id=1")
+        from rssbot.feed import find_secret_param
+        self.assertEqual(find_secret_param("https://ex.com/a;jsessionid=abc/b"), "jsessionid")  # 중간 조각
+        self.assertEqual(find_secret_param("https://ex.com/a/b;token=1"), "token")  # 마지막 조각
+        self.assertIsNone(find_secret_param("https://ex.com/a/b?id=1"))
+
     def test_clean_link_removes_fragment_path_params_and_semicolon_separated_secrets(self):
         self.assertEqual(clean_link("https://ex.com/a;jsessionid=abc?id=1#access_token=xyz"), "https://ex.com/a?id=1")
         self.assertEqual(clean_link("https://ex.com/a?id=1;token=x"), "https://ex.com/a?id=1")  # ';'로 숨긴 token

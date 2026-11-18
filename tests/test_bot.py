@@ -79,7 +79,8 @@ class CommandTests(unittest.TestCase):
         for ok in ("https://ex.com/rss?channel_id=UC123", "https://ex.com/feed?keyword=swift", "https://ex.com/rss"):
             self.assertIn("추가했습니다", commands.handle(f"/add {ok}", self.store), ok)
         self.assertIn("등록할 수 없습니다", commands.handle("/edit 1 url https://ex.com/rss?secret=1", self.store))
-        for hidden in ("https://ex.com/rss#access_token=1", "https://ex.com/rss;jsessionid=abc", "https://ex.com/rss?a=1;token=x"):
+        for hidden in ("https://ex.com/rss#access_token=1", "https://ex.com/rss;jsessionid=abc", "https://ex.com/rss?a=1;token=x",
+                       "https://ex.com/a;jsessionid=abc/rss"):
             self.assertIn("등록할 수 없습니다", commands.handle(f"/add {hidden}", self.store), hidden)
 
     def test_error_replies_do_not_leak_urls(self):
@@ -644,6 +645,50 @@ class RunTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertLess(time.monotonic() - started, 6)
         self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2"])  # 최종 커밋이 올릴 상태가 저장됨
+
+    def test_timeout_during_command_leaves_offset_command_and_reply_consistent(self):
+        """명령 처리 도중 시간 한도가 와도 offset 전진·명령 적용·응답 적재가 함께 끝나야 한다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        real_handle = commands.handle
+        block = threading.Event()
+        self.addCleanup(block.set)
+
+        def slow_handle(text, store):
+            block.wait(1.6)  # 한도(1초)가 이 안에서 도래
+            return real_handle(text, store)
+
+        tg = FakeTG(updates=[msg(5, "/remove 1")])
+        with mock.patch("rssbot.main.commands.handle", side_effect=slow_handle), \
+             mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, tg, hard_limit=1)
+        self.assertFalse(ok)
+        st = Store(self.tmp.name)
+        self.assertEqual(st.items, [])  # 명령은 적용됐고
+        self.assertEqual(st.state["update_offset"], 6)  # offset도 넘어갔으며
+        self.assertEqual(len(st.state["outbox"]), 1)  # 응답도 보관됨 (다음 실행에서 전달)
+
+    def test_timeout_during_collect_never_leaves_seen_without_pending(self):
+        """seen에는 기록됐는데 pending은 비는 상태로 저장되면 그 글은 영영 사라진다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        real_persist = main._persist_pending
+        block = threading.Event()
+        self.addCleanup(block.set)
+
+        def slow_persist(store, fid, items):
+            block.wait(1.6)  # seen 갱신 직후, pending 기록 도중에 한도가 도래
+            return real_persist(store, fid, items)
+
+        with mock.patch("rssbot.main._persist_pending", side_effect=slow_persist), \
+             mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, FakeTG(), hard_limit=1)
+        self.assertFalse(ok)
+        st = self.state()
+        self.assertIn("2", st["seen"]["1"])
+        self.assertEqual([p["id"] for p in st["pending"]["1"]], ["2"])  # seen에 있으면 pending에도 있어야 함
+
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("2", "1"))  # 다음 실행에서 정상 전달
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "title-2" in t]), 1)
 
     def test_hard_limit_is_not_swallowed_by_except_exception(self):
         self.assertFalse(issubclass(main.RunTimeout, Exception))
