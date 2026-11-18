@@ -32,5 +32,6 @@
   "pending": {},
   "dropped": {},
   "outbox": [],
-  "rebase": {}
+  "rebase": {},
+  "deferred": {}
 }
