@@ -990,6 +990,43 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len(texts), 1)
         self.assertIn("대문자 새 글", texts[0])  # 경로 대소문자만 다른 새 글도 알림
 
+    def _edit_url_notified(self, old_ids, new_ids):
+        mk = lambda ids: Feed("T", [Entry(id=i, title=f"글[{i}]", link="https://ex.com/x") for i in ids])
+        self.run_bot(FakeTG(), mk(old_ids))
+        new = mk(new_ids)
+        tg = FakeTG(updates=[msg(5, "/edit 1 url https://mirror.example/rss")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=new), mock.patch("rssbot.main.fetch_feed", return_value=new):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        return [t for _, t, is_html in tg.sent if is_html]
+
+    def test_ambiguous_approximate_matches_are_never_suppressed(self):
+        """근사 일치가 모호하면(같은 정규화 형태의 ID가 여럿) 합치지 않고 알린다. 중복은 감수해도 누락은 안 된다."""
+        # 새 피드 쪽 모호: p/3 과 p/3/ 이 둘 다 새 글로 올라옴 (기존 기록엔 http://.../p/3 하나)
+        texts = self._edit_url_notified(
+            ["http://ex.com/p/3", "https://ex.com/p/1"],
+            ["https://ex.com/p/3", "https://ex.com/p/3/", "https://ex.com/p/1"])
+        self.assertEqual(len(texts), 2)
+        self.assertTrue(all("p/3" in t for t in texts))
+
+    def test_ambiguous_old_side_is_not_suppressed_either(self):
+        # 기존 기록 쪽 모호: p/3 과 p/3/ 이 둘 다 이미 본 글 -> 새 피드의 http://.../p/3 이 어느 쪽인지 알 수 없음
+        texts = self._edit_url_notified(
+            ["https://ex.com/p/3", "https://ex.com/p/3/", "https://ex.com/p/1"],
+            ["http://ex.com/p/3", "https://ex.com/p/1"])
+        self.assertEqual(len(texts), 1)
+        self.assertIn("p/3", texts[0])
+
+    def test_exact_match_and_clean_one_to_one_mirror_are_still_suppressed(self):
+        texts = self._edit_url_notified(
+            ["http://www.ex.com/p/2/", "http://www.ex.com/p/1/"],
+            ["https://ex.com/p/3", "https://ex.com/p/2", "https://ex.com/p/1"])  # 1:1 미러 + 새 글 하나
+        self.assertEqual(len(texts), 1)
+        self.assertIn("p/3", texts[0])
+
+    def test_exact_id_match_is_suppressed_after_url_change(self):
+        texts = self._edit_url_notified(["https://ex.com/p/2", "https://ex.com/p/1"], ["https://ex.com/p/2", "https://ex.com/p/1"])
+        self.assertEqual(texts, [])  # 정확히 같은 ID는 본 글
+
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
             json.dump({"next_id": 3, "feeds": [

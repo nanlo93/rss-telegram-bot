@@ -208,12 +208,27 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
         # 새 주소의 글이 기존 기록(·미전송 글)과 겹치면 같은 피드(주소만 다름)라서 새 글을 알리고, 하나도 겹치지 않으면 다른
         # 피드라서 기존 글을 알리지 않고 기준선만 잡는다. http→https·www·끝 슬래시 차이로 글 ID가 달라지는 피드도
         # 같은 피드로 알아보도록, 이 첫 비교에서는 그 차이를 무시한다.
-        norm_known = {_norm_id(i) for i in known}
-        if not ({_norm_id(i) for i in current_ids} & norm_known):
+        old_by_norm: dict = {}
+        for i in known:
+            old_by_norm.setdefault(_norm_id(i), set()).add(i)
+        new_by_norm: dict = {}
+        for e in parsed.entries:
+            new_by_norm.setdefault(_norm_id(e.id), []).append(e.id)
+        if not (set(new_by_norm) & set(old_by_norm)):
             store.state["seen"][fid] = current_ids[:SEEN_LIMIT]
             log(f"[{f['name']}] 주소가 바뀐 뒤 다른 피드로 판단해 기준선 등록: {len(current_ids)}건")
             return
-        new = [_queue_item(e) for e in reversed(parsed.entries) if _norm_id(e.id) not in norm_known]  # 오래된 글부터
+
+        def already_seen(entry) -> bool:
+            if entry.id in known:  # 정확히 같은 ID: 확실히 본 글
+                return True
+            # 근사 일치(스킴·www·끝 슬래시 차이)는 어떤 정규화 규칙으로도 서로 다른 글을 합칠 위험이 남는다. 알림을 억제하는
+            # 쪽(= 누락)이 중복 알림보다 나쁘므로, 기존 기록과 새 피드 양쪽에서 그 형태가 하나뿐인 1:1 짝일 때만 인정한다.
+            # 모호하면(같은 형태의 ID가 여럿) 합치지 않고 알린다.
+            key = _norm_id(entry.id)
+            return len(old_by_norm.get(key, ())) == 1 and len(new_by_norm.get(key, ())) == 1
+
+        new = [_queue_item(e) for e in reversed(parsed.entries) if not already_seen(e)]  # 오래된 글부터
     else:
         new = [_queue_item(e) for e in reversed(parsed.entries) if e.id not in known]  # 오래된 글부터
 
