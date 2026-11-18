@@ -338,6 +338,39 @@ class RunTests(unittest.TestCase):
             self.run_bot(tg, feed_of("3", "2", "1"))
         self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2", "3"])
 
+    def test_deferring_warns_once_and_reports_posts_that_rolled_off_the_feed(self):
+        """미룬 글이 피드에서 밀려나 사라지면 조용히 넘어가지 않고 건수를 안내한다. 미루기 시작할 때도 한 번 경고한다."""
+        with mock.patch("rssbot.main.MAX_PENDING", 5):
+            self.run_bot(FakeTG(), feed_of("0"))
+            first = feed_of(*[str(i) for i in range(12, 0, -1)], "0")
+            self.run_bot(FakeTG(fail_sends=99), first)  # 대기열이 가득 차고 6~12번 글을 미룸
+            st = self.state()
+            self.assertEqual(sorted(st["deferred"]["1"], key=int), [str(i) for i in range(6, 13)])
+            # 전송이 불통인 동안 피드가 계속 올라와 6~12번 글이 피드에서 밀려남
+            rolled = feed_of(*[str(i) for i in range(20, 12, -1)], "0")
+            self.run_bot(FakeTG(fail_sends=99), rolled)
+            tg = FakeTG()
+            self.run_bot(tg, rolled)  # 복구
+        notices = [t for _, t, is_html in tg.sent if not is_html]
+        warns = [t for t in notices if "알림을 미룹니다" in t]
+        lost = [t for t in notices if "밀려나 알리지 못했습니다" in t]
+        self.assertEqual(len(warns), 1)  # 미루기 시작할 때 한 번만
+        self.assertEqual(len(lost), 1)
+        self.assertIn("7건", lost[0])  # 6~12번 글 7건
+
+    def test_deferral_is_quiet_when_queue_drains_before_posts_roll_off(self):
+        with mock.patch("rssbot.main.MAX_PENDING", 5):
+            self.run_bot(FakeTG(), feed_of("0"))
+            ids = [str(i) for i in range(12, 0, -1)] + ["0"]
+            self.run_bot(FakeTG(fail_sends=99), feed_of(*ids))
+            tg = FakeTG()
+            for _ in range(5):
+                self.run_bot(tg, feed_of(*ids))
+        notices = [t for _, t, is_html in tg.sent if not is_html]
+        self.assertEqual(len([t for t in notices if "알림을 미룹니다" in t]), 1)  # 경고는 한 번
+        self.assertEqual([t for t in notices if "알리지 못했습니다" in t], [])  # 밀려난 글은 없음
+        self.assertNotIn("1", self.state()["deferred"])  # 에피소드가 끝나면 추적도 끝남
+
     def test_send_timeout_with_full_queue_keeps_queue_and_defers_the_rest(self):
         self.run_bot(FakeTG(), feed_of("0"))
         ids = [str(i) for i in range(12, 0, -1)] + ["0"]

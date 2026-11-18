@@ -26,6 +26,7 @@ from .telegram import Telegram, TelegramError
 
 COMMANDS_VERSION = 1  # commands.COMMANDS를 바꾸면 올려서 메뉴를 다시 등록
 MAX_PER_FEED = 10  # 한 번의 실행에서 피드 하나에 보내는 최대 글 수 (나머지는 다음 실행에서 이어서 보냄)
+MAX_DEFERRED_IDS = 500  # 대기열이 가득 차 미룬 글 중 밀려남을 추적할 ID의 최대 개수 (피드당)
 MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피드당). 넘는 새 글은 버리지 않고 다음 실행으로 미룬다
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
@@ -241,6 +242,20 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
     deferred_ids = {d["id"] for d in deferred}
     if deferred:
         log(f"[{f['name']}] 대기열이 가득 차 새 글 {len(deferred)}건은 다음 실행으로 미룹니다 (대기 {len(pending)}건)")
+
+    # 미룬 글은 피드에 남아 있는 동안만 다시 잡힌다. 그 사이 피드에서 밀려나면 알릴 방법이 없으므로, 조용히 사라지지 않도록
+    # 미룬 글의 ID를 기억해 두었다가 사라진 건수를 안내한다. 미루기 시작할 때도 한 번 경고한다.
+    prev_deferred = store.state["deferred"].get(fid, [])
+    current_set = set(current_ids)
+    lost = [i for i in prev_deferred if i not in current_set]
+    if deferred:
+        store.state["deferred"][fid] = [d["id"] for d in deferred][:MAX_DEFERRED_IDS]
+    else:
+        store.state["deferred"].pop(fid, None)
+    if lost:
+        notices.append(f"'{f['name']}' 대기열이 가득 차 미뤄 둔 새 글 {len(lost)}건이 피드에서 밀려나 알리지 못했습니다.")
+    elif deferred and not prev_deferred:
+        notices.append(f"'{f['name']}' 대기열이 가득 차 새 글 {len(deferred)}건의 알림을 미룹니다. 전송이 정상화되기 전에 피드에서 밀려나면 알리지 못할 수 있습니다.")
 
     # 관측한 글은 seen에 기록하고(미룬 글 제외), 아직 알리지 못한 글은 내용째 pending에 보관한다.
     # (이후 피드에서 그 글이 사라져도, 전송이 늦어져도 누락되지 않음)
