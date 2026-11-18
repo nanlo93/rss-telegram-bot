@@ -103,17 +103,19 @@ class CommandTests(unittest.TestCase):
         self.store.state["dropped"][fid] = 3
         r = commands.handle("/edit 1 url https://ex.com/new", self.store)
         self.assertIn("이전: https://ex.com/rss", r)
+        self.assertIn("/edit <번호> url https://ex.com/rss", r)  # 되돌리기 안내는 번호 확인을 먼저 요구
         self.assertEqual([p["id"] for p in self.store.state["pending"][fid]], ["x"])
         self.assertEqual(self.store.state["dropped"][fid], 3)
 
     def test_edit_to_same_url_is_noop_and_does_not_swallow_new_posts(self):
         commands.handle("/add https://ex.com/rss", self.store)
         fid = str(self.store.items[0]["id"])
-        self.store.state["seen"][fid] = ["old"]  # 아직 새 글(a, b)을 수집하기 전의 기준선
+        self.store.state["seen"][fid] = ["old"]
         with mock.patch("rssbot.commands.fetch_feed", side_effect=AssertionError("접속하면 안 됨")):
             r = commands.handle("/edit 1 url https://ex.com/rss", self.store)
         self.assertIn("이미 이 주소", r)
-        self.assertEqual(self.store.state["seen"][fid], ["old"])  # 기준선을 다시 잡아 새 글을 삼키지 않음
+        self.assertEqual(self.store.state["seen"][fid], ["old"])
+        self.assertNotIn(fid, self.store.state["rebase"])  # 아무 표시도 남기지 않음
 
     def test_failed_edit_names_the_target_and_asks_to_check_list_before_resending(self):
         commands.handle("/add https://ex.com/rss 첫째", self.store)
@@ -128,7 +130,7 @@ class CommandTests(unittest.TestCase):
         self.assertIn("'첫째'에서 '새이름'", commands.handle("/edit 1 name 새이름", self.store))
         r = commands.handle("/remove 1", self.store)
         self.assertIn("새이름", r)
-        self.assertIn("https://ex.com/rss", r)
+        self.assertIn("/add https://ex.com/rss 새이름", r)  # 번호 없이 바로 복구할 수 있는 명령
 
     def test_default_name_is_feed_title(self):
         commands.handle("/add https://ex.com/rss", self.store)
@@ -831,6 +833,51 @@ class RunTests(unittest.TestCase):
                 break
             threading.Event().wait(0.05)
         self.assertFalse(alive)
+
+    def _edit_url_scenario(self, new_feed, edit_to="https://mirror.example/rss"):
+        """GN 구독에 [2,1]까지 본 상태에서 주소를 바꾼 뒤, 새 주소에서 new_feed를 받는 실행."""
+        self.run_bot(FakeTG(), feed_of("2", "1"))
+        tg = FakeTG(updates=[msg(5, f"/edit 1 url {edit_to}")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=new_feed), mock.patch("rssbot.main.fetch_feed", return_value=new_feed):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        return tg
+
+    def test_url_change_to_same_feed_does_not_swallow_new_posts(self):
+        """http→https, 끝 슬래시, 미러처럼 같은 피드의 주소만 바뀐 경우 마지막 수집 이후의 새 글도 알려야 한다."""
+        tg = self._edit_url_scenario(feed_of("4", "3", "2", "1"))
+        texts = [t for _, t, _ in tg.sent if "title-" in t]
+        self.assertEqual(len(texts), 2)  # 3, 4번 글
+        self.assertTrue("title-3" in texts[0] and "title-4" in texts[1])
+        self.assertNotIn("1", self.state()["rebase"])  # 판단이 끝나면 표시를 지움
+
+    def test_url_change_to_different_feed_sets_silent_baseline(self):
+        tg = self._edit_url_scenario(feed_of("y", "x"))  # 기존 기록과 겹치는 글이 없음 = 다른 피드
+        self.assertEqual([t for _, t, _ in tg.sent if "title-" in t], [])  # 기존 글을 쏟아내지 않음
+        self.assertEqual(self.state()["seen"]["1"], ["y", "x"])
+        self.assertNotIn("1", self.state()["rebase"])
+
+    def test_url_change_judgement_waits_for_a_successful_fetch(self):
+        self.run_bot(FakeTG(), feed_of("2", "1"))
+        with mock.patch("rssbot.commands.fetch_feed", return_value=feed_of("3", "2", "1")), \
+             mock.patch("rssbot.main.fetch_feed", side_effect=FeedError("일시 장애")):
+            main.run(self.tmp.name, "tok", OWNER, FakeTG(updates=[msg(5, "/edit 1 url https://mirror.example/rss")]))
+        self.assertTrue(self.state()["rebase"]["1"])  # 가져오기에 실패해도 표시는 남음
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("3", "2", "1"))  # 같은 피드 -> 새 글(3) 정상 알림
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "title-3" in t]), 1)
+        self.assertNotIn("1", self.state()["rebase"])
+
+    def test_url_change_keeps_pending_and_remove_clears_rebase_flag(self):
+        self.run_bot(FakeTG(), feed_of("2", "1"))
+        self.run_bot(FakeTG(fail_sends=99), feed_of("3", "2", "1"))  # 3번 글 전송 실패 -> pending
+        tg = FakeTG(updates=[msg(5, "/edit 1 url https://mirror.example/rss")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=feed_of("y", "x")), mock.patch("rssbot.main.fetch_feed", return_value=feed_of("y", "x")):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "title-3" in t]), 1)  # 다른 피드로 바뀌어도 미전송 알림은 전달
+        st = Store(self.tmp.name)
+        st.state["rebase"]["1"] = True
+        st.remove(st.items[0])
+        self.assertNotIn("1", st.state["rebase"])
 
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:

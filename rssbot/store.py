@@ -25,7 +25,7 @@ def _dump(path: str, obj: dict) -> None:
 class Store:
     """feeds: {"next_id": int, "feeds": [{"id","name","url"}]}
     state: {"update_offset": int, "seen": {feed_id: [글 ID]}, "pending": {feed_id: [{"id","title","link"}]},
-    "dropped": {feed_id: 대기열 한도로 버려진 글 수}, "fails": {feed_id: int}, "commands_v": int,
+    "dropped": {feed_id: 대기열 한도로 버려진 글 수}, "fails": {feed_id: int}, "rebase": {feed_id: True}, "commands_v": int,
     "outbox": [{"text": 보내야 할 명령 응답·경고 메시지}]}
     """
 
@@ -42,8 +42,8 @@ class Store:
         메모리 상태를 그대로 두면 다음 save()가 그 변경을 되돌리므로, 체크포인트 직후 병합된 내용을 다시 읽는다.
         """
         self.feeds = _load(self.feeds_path, {"next_id": 1, "feeds": []})
-        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "dropped": {}, "fails": {}, "commands_v": 0, "outbox": []})
-        for key, default in (("seen", {}), ("pending", {}), ("dropped", {}), ("fails", {}), ("outbox", [])):
+        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "dropped": {}, "fails": {}, "rebase": {}, "commands_v": 0, "outbox": []})
+        for key, default in (("seen", {}), ("pending", {}), ("dropped", {}), ("fails", {}), ("rebase", {}), ("outbox", [])):
             self.state.setdefault(key, default)
 
     @property
@@ -59,17 +59,18 @@ class Store:
 
     def remove(self, feed: dict) -> None:
         self.items.remove(feed)
-        for key in ("seen", "pending", "dropped", "fails"):
+        for key in ("seen", "pending", "dropped", "fails", "rebase"):
             self.state[key].pop(str(feed["id"]), None)
 
-    def reset_seen(self, feed: dict, seen_ids: list) -> None:
-        """주소가 바뀐 구독의 기준선(seen)을 새 피드의 현재 글로 다시 잡는다.
+    def mark_url_changed(self, feed: dict) -> None:
+        """구독의 주소가 바뀌었음을 표시한다. 기준선은 여기서 잡지 않고 다음 수집 때 판단한다.
 
-        pending·dropped(아직 알리지 못한 글과 그 건수)는 지우지 않는다. 구독 번호로 대상을 지정하는 명령은 번호가 밀려
-        엉뚱한 구독에 적용될 수 있는데, 그때 미전송 알림까지 조용히 사라지면 되돌릴 수 없다. 이미 관측한 글이므로
-        그대로 전달하는 쪽이 안전하다.
+        바로 새 주소의 현재 글을 전부 '본 글'로 덮으면, 같은 피드를 주소만 바꾼 경우(http→https, 끝 슬래시, 미러)나 이전
+        주소로 되돌리는 경우에 마지막 수집 이후 올라온 새 글이 알림 없이 사라진다. 다음 수집 때 새 주소의 글이 기존
+        기록과 겹치는지 보고 같은 피드인지 다른 피드인지 정한다. (main._collect_one 참고)
+        pending·dropped(미전송 알림)도 지우지 않는다. 번호가 밀려 엉뚱한 구독에 적용돼도 알림이 사라지지 않게 하기 위함.
         """
-        self.state["seen"][str(feed["id"])] = list(seen_ids)[:SEEN_LIMIT]
+        self.state["rebase"][str(feed["id"])] = True
         self.state["fails"].pop(str(feed["id"]), None)
 
     def save(self) -> None:

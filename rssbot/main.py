@@ -165,7 +165,10 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
 
     current_ids = [e.id for e in parsed.entries]
     old = store.state["seen"].get(fid)
-    if old is None:  # 처음 보는 피드는 기준선만 잡고 알리지 않음
+    url_changed = store.state["rebase"].pop(fid, None)  # /edit url 직후의 첫 수집 (가져오기에 실패했다면 아직 남아 있음)
+    if old is None or (url_changed and not (set(current_ids) & set(old))):
+        # 처음 보는 피드이거나, 주소가 바뀐 뒤 새 주소의 글이 기존 기록과 하나도 겹치지 않는 경우(= 다른 피드)는
+        # 기존 글을 알리지 않고 기준선만 잡는다. 겹치면 같은 피드(주소만 다름)이므로 아래의 정상 처리로 새 글을 알린다.
         store.state["seen"][fid] = current_ids[:SEEN_LIMIT]
         log(f"[{f['name']}] 기준선 등록: {len(current_ids)}건")
         return

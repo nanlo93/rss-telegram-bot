@@ -186,10 +186,12 @@ def cmd_edit(store: Store, args: list, prefetched=None) -> str:
         return (f"{number}번 '{target['name']}'의 주소를 바꾸지 못했습니다: {redact(e)}\n"
                 "구독 번호는 목록이 바뀌면 달라질 수 있으니, 다시 보내기 전에 /list 로 번호를 확인해 주세요.")
     old_url, target["url"] = target["url"], value
-    store.reset_seen(target, [e.id for e in feed.entries])
+    store.mark_url_changed(target)
     return (f"{number}번 '{target['name']}'의 주소를 바꿨습니다.\n이전: {old_url}\n"
-            f"새 주소의 기존 글 {len(feed.entries)}건은 알리지 않고, 아직 알리지 못한 글은 그대로 전달합니다.\n"
-            "잘못 바꿨다면 이전 주소로 /edit 를 다시 보내 주세요.")
+            "새 주소가 같은 피드(주소만 다름)면 새 글부터 그대로 알리고, 다른 피드면 그 피드의 기존 글은 알리지 않고 이후 글부터 알립니다. "
+            "아직 알리지 못한 글은 그대로 전달합니다.\n"
+            f"되돌리려면 /list 로 번호를 확인한 뒤 '/edit <번호> url {old_url}' 를 보내세요. "
+            "다른 피드로 바꿨다가 돌아오면 그 사이 올라온 글은 알리지 않습니다.")
 
 
 def cmd_remove(store: Store, args: list, prefetched=None) -> str:
@@ -199,7 +201,9 @@ def cmd_remove(store: Store, args: list, prefetched=None) -> str:
     if err:
         return err
     store.remove(target)
-    return f"삭제했습니다: {target['name']}\n주소: {target['url']}\n잘못 지웠다면 /add 로 다시 추가할 수 있습니다."
+    return (f"삭제했습니다: {target['name']}\n주소: {target['url']}\n"
+            f"잘못 지웠다면 '/add {target['url']} {target['name']}' 로 다시 추가할 수 있습니다. "
+            "(다시 추가하면 그 사이 올라온 글은 알리지 않고, 삭제 시점의 미전송 알림은 사라집니다)")
 
 
 HANDLERS = {
