@@ -33,5 +33,6 @@
   "dropped": {},
   "outbox": [],
   "rebase": {},
-  "deferred": {}
+  "deferred": {},
+  "lost": {}
 }
