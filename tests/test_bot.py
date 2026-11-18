@@ -581,6 +581,43 @@ class RunTests(unittest.TestCase):
         self.assertLess(time.monotonic() - started, 3)
         self.assertEqual(printed, [])  # 한도가 지난 뒤에는 모아 둔 로그를 출력하느라 지체하지 않음
 
+    def test_state_is_saved_before_the_final_timeout_log_even_if_stdout_is_blocked(self):
+        """한도에 도달했을 때 표준 출력이 막혀 있어도, 상태 저장이 로그 출력에 막히면 안 되고 출력 자체도 오래 붙잡으면 안 된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        release = threading.Event()
+        self.addCleanup(release.set)
+        armed = {"on": False}
+        snapshots = []
+        state_path = os.path.join(self.tmp.name, "state.json")
+
+        def blocking_print(*args, **kwargs):
+            if armed["on"]:
+                with open(state_path) as f:  # 출력이 시작되는 순간 디스크의 상태
+                    snapshots.append(json.load(f))
+                release.wait(8)  # 막힌 표준 출력
+
+        tg = FakeTG()
+        calls = {"n": 0}
+
+        def send(chat_id, text, html=False):
+            calls["n"] += 1
+            if calls["n"] == 1:  # 2번 글은 정상 전송 -> 메모리의 pending은 ['3'], 디스크(체크포인트)에는 아직 ['2', '3']
+                tg.sent.append((chat_id, text, html))
+                return
+            armed["on"] = True  # 3번 글에서 멈춤: 이후의 출력은 막힘
+            release.wait(30)
+
+        tg.send_message = send
+        started = time.monotonic()
+        with mock.patch("builtins.print", blocking_print), mock.patch("rssbot.main.FINAL_LOG_TIMEOUT", 1), \
+             mock.patch("rssbot.main.fetch_feed", return_value=feed_of("3", "2", "1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, tg, hard_limit=1)
+        self.assertFalse(ok)
+        self.assertLess(time.monotonic() - started, 6)  # 막힌 출력을 끝까지 기다리지 않음 (한도 1초 + 출력 제한 1초 안팎)
+        self.assertTrue(snapshots)  # 중단 로그를 출력하려 했고
+        # 출력이 시작되는 순간 이미 최종 상태가 저장돼 있었다. (체크포인트 시점의 디스크는 ['2', '3'])
+        self.assertEqual([p["id"] for p in snapshots[0]["pending"]["1"]], ["3"])
+
     def test_lost_record_is_cleaned_when_feed_is_removed(self):
         with tempfile.TemporaryDirectory() as d:
             store = Store(d)

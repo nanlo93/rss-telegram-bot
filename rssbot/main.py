@@ -54,6 +54,30 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+FINAL_LOG_TIMEOUT = 3  # 중단 경로의 마지막 로그 출력을 기다려 주는 시간(초). 표준 출력이 막혀 있어도 이 이상은 지체하지 않는다
+
+
+def _log_bounded(msg: str, seconds: int | None = None) -> None:
+    """로그를 출력하되 seconds초를 넘기면 포기한다. 표준 출력이 막혀도 프로세스 종료(와 이어지는 최종 커밋)가 지체되지 않게 한다."""
+    seconds = seconds if seconds is not None else FINAL_LOG_TIMEOUT
+    if not hasattr(signal, "SIGALRM") or threading.current_thread() is not threading.main_thread():
+        log(msg)
+        return
+
+    def on_alarm(signum, frame):
+        raise RunTimeout()
+
+    old = signal.signal(signal.SIGALRM, on_alarm)
+    signal.alarm(int(seconds))
+    try:
+        log(msg)
+    except RunTimeout:
+        pass  # 출력이 막혀 포기함
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)
+
+
 class RunTimeout(BaseException):
     """실행 전체 시간 한도 초과. Exception이 아니라서 곳곳의 'except Exception'에 삼켜지지 않고, finally(상태 저장)는 실행된다."""
 
@@ -557,6 +581,7 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
     store = Store(data_dir)
     tg = tg or Telegram(token)
     ok = True
+    timed_out = False
     # 단계별 한도는 "대체로" 지켜질 뿐이라(진행 중인 요청·재시도 대기 등) 더하면 실행 제한을 넘길 수 있다.
     # 그래서 전체 한도를 SIGALRM으로 강제한다: 블로킹 중인 호출도 끊고, finally에서 상태를 저장한 뒤 실패로 끝낸다.
     # (최종 커밋은 별도 워크플로 단계에서 하므로, 그 시간을 남기려고 실행 제한보다 짧게 잡는다)
@@ -599,13 +624,17 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
 
         deliver(store, tg, owner_chat_id)
     except RunTimeout:
-        log(f"실행 전체 시간 한도({hard_limit}초)에 도달해 중단합니다. 못 보낸 알림은 상태에 남아 다음 실행에서 이어집니다.")
+        # 여기서 바로 로그를 출력하지 않는다. 표준 출력이 막혀 있으면 출력이 끝나기 전에는 아래 finally의 상태 저장에 도달하지
+        # 못하고, 알람은 이미 한 번 울린 뒤라 아무것도 그 출력을 끊어 주지 않는다. 저장이 먼저, 출력은 나중에(그것도 시간 제한을 두고).
         ok = False
+        timed_out = True
     finally:
         if use_alarm:
             signal.alarm(0)
             signal.signal(signal.SIGALRM, old_handler)
         store.save()
+    if timed_out:
+        _log_bounded(f"실행 전체 시간 한도({hard_limit}초)에 도달해 중단합니다. 못 보낸 알림은 상태에 남아 다음 실행에서 이어집니다.")
     return ok
 
 
