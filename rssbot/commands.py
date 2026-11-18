@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from urllib.parse import parse_qsl, urlparse
 
-from .feed import FeedError, fetch_feed
+from .feed import SECRET_PARAM_SUFFIXES, FeedError, fetch_feed
 from .store import Store
 
 MAX_FEEDS = 50
@@ -34,7 +34,6 @@ def _valid_url(url: str) -> bool:
 
 
 _URL_RE = re.compile(r"[a-z][a-z0-9+.\-]*://\S+", re.IGNORECASE)  # 스킴·대소문자와 무관하게
-_SECRET_PARAM_SUFFIXES = ("token", "secret", "password", "passwd", "apikey", "api_key", "key", "auth", "sig", "signature", "session")
 
 
 def redact(text) -> str:
@@ -51,7 +50,7 @@ def unsafe_url_reason(url: str):
     if p.username or p.password:
         return "URL에 아이디·비밀번호가 들어 있습니다"
     for key, _ in parse_qsl(p.query, keep_blank_values=True):
-        if key.lower().endswith(_SECRET_PARAM_SUFFIXES):
+        if key.lower().endswith(SECRET_PARAM_SUFFIXES):
             return f"URL의 '{key}' 값이 인증 정보로 보입니다"
     return None
 

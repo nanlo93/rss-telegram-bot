@@ -11,6 +11,7 @@ import shlex
 import subprocess
 import sys
 import queue
+import signal
 import threading
 import time
 
@@ -30,6 +31,8 @@ MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최�
 MAX_UPDATES_PER_RUN = 25  # 한 번에 가져와 처리하는 텔레그램 명령 수 (나머지는 다음 실행에서)
 COLLECT_WORKERS = commands.MAX_FEEDS  # 허용된 구독 수만큼 일꾼을 둬, 응답 없는 피드가 앞에 몰려도 뒤 피드가 굶지 않게 함 (피드마다 전용 스레드)
 PER_HOST_LIMIT = 2  # 같은 호스트로 동시에 보내는 요청 수 (몰리면 429·차단을 맞아 정상 피드가 반복 누락됨)
+COMMAND_BUDGET = 120  # 텔레그램 명령 처리 단계의 시간 한도(초). 넘기면 남은 명령은 다음 실행에서 (offset이 안 넘어감)
+DELIVER_BUDGET = 300  # 전송 단계의 시간 한도(초). 넘기면 남은 글은 pending에 두고 끝낸다 (최종 커밋 시간 확보)
 COLLECT_BUDGET = 150  # 수집 단계 전체 시간 한도(초). 넘기면 못 가져온 피드는 이번 실행에서 건너뜀
 CHECKPOINT_TIMEOUT = 120
 
@@ -70,7 +73,11 @@ def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
     if room <= 0:
         log("outbox가 가득 차 이번 실행에서는 새 명령을 가져오지 않습니다.")
         return
+    deadline = time.monotonic() + COMMAND_BUDGET
     for upd in tg.get_updates(offset, limit=min(room, MAX_UPDATES_PER_RUN)):
+        if time.monotonic() >= deadline:  # 명령(/add 검증 등)이 오래 걸려도 체크포인트·전송 시간을 남긴다
+            log("명령 처리 시간 한도에 도달해 나머지 명령은 다음 실행에서 처리합니다.")
+            break
         store.state["update_offset"] = upd["update_id"] + 1
         msg = upd.get("message") or {}
         chat_id = str((msg.get("chat") or {}).get("id", ""))
@@ -149,7 +156,10 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
 
 
 def _host_of(url: str) -> str:
-    return (urlparse(url).hostname or "").lower()
+    try:
+        return (urlparse(url).hostname or "").lower()
+    except ValueError:  # 손으로 고친 feeds.json의 잘못된 URL(예: 닫는 대괄호 누락)이 수집 전체를 막지 않게 함
+        return ""
 
 
 def _fetch_all(feeds: list) -> dict:
@@ -241,7 +251,7 @@ def _send_item(tg: Telegram, owner_chat_id: str, feed_name: str, entry: Entry) -
         return False
 
 
-def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> bool:
+def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict, deadline: float | None = None) -> bool:
     """피드의 pending을 전송한다. 일시 오류로 중단되면 False (남은 글은 pending에 유지)."""
     fid = str(f["id"])
     queue = store.state["pending"].get(fid, [])
@@ -256,6 +266,9 @@ def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> bo
             store.state["dropped"].pop(fid, None)
             _persist_pending(store, fid, to_send)
         for idx, item in enumerate(to_send):
+            if deadline is not None and time.monotonic() >= deadline:
+                log(f"[{f['name']}] 전송 시간 한도에 도달해 남은 {len(to_send) - idx}건은 다음 실행에서 보냅니다.")
+                return False
             _send_item(tg, owner_chat_id, f["name"], Entry(**item))
             _persist_pending(store, fid, to_send[idx + 1 :])
             time.sleep(SEND_INTERVAL)
@@ -266,10 +279,13 @@ def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict) -> bo
     return True
 
 
-def flush_outbox(store: Store, tg: Telegram, owner_chat_id: str) -> bool:
-    """outbox의 명령 응답·경고를 순서대로 보낸다. 성공한 것만 지우며, 실패하면 남은 것을 두고 False."""
+def flush_outbox(store: Store, tg: Telegram, owner_chat_id: str, deadline: float | None = None) -> bool:
+    """outbox의 명령 응답·경고를 순서대로 보낸다. 성공한 것만 지우며, 실패하거나 시간 한도를 넘기면 남은 것을 두고 False."""
     box = store.state["outbox"]
     while box:
+        if deadline is not None and time.monotonic() >= deadline:
+            log(f"전송 시간 한도에 도달해 남은 안내 {len(box)}건은 다음 실행에서 보냅니다.")
+            return False
         try:
             tg.send_message(owner_chat_id, box[0]["text"])
         except TelegramError as e:
@@ -291,10 +307,11 @@ def deliver(store: Store, tg: Telegram, owner_chat_id: str) -> None:
 
     텔레그램 자체가 불통이면(첫 실패) 나머지는 시도하지 않고 다음 실행으로 넘긴다.
     """
-    if not flush_outbox(store, tg, owner_chat_id):
+    deadline = time.monotonic() + DELIVER_BUDGET  # 최종 커밋(실행 제한 10분 안)에 도달할 시간을 남기기 위함
+    if not flush_outbox(store, tg, owner_chat_id, deadline):
         return
     for f in list(store.items):
-        if not _deliver_feed(store, tg, owner_chat_id, f):
+        if not _deliver_feed(store, tg, owner_chat_id, f, deadline):
             return
 
 
@@ -360,9 +377,20 @@ def _hook_from_env():
     argv = shlex.split(cmd)
 
     def hook() -> None:
-        r = subprocess.run(argv, timeout=CHECKPOINT_TIMEOUT)
-        if r.returncode != 0:
-            raise RuntimeError(f"{argv[0]} 종료 코드 {r.returncode}")
+        # 별도 프로세스 그룹으로 실행해, 시간 초과 시 git pull/push 같은 자식까지 함께 종료한다.
+        # (직접 실행한 셸만 죽으면 남은 git이 작업 트리를 계속 바꿔, 이후 상태 읽기·저장과 충돌한다)
+        proc = subprocess.Popen(argv, start_new_session=True)
+        try:
+            code = proc.wait(timeout=CHECKPOINT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+            raise RuntimeError(f"{argv[0]} 시간 초과({CHECKPOINT_TIMEOUT}초): 자식 프로세스까지 종료함") from None
+        if code != 0:
+            raise RuntimeError(f"{argv[0]} 종료 코드 {code}")
 
     return hook
 

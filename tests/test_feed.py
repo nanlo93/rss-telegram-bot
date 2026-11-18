@@ -66,6 +66,47 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(clean_link("https://a.com/p?id=3&utm_source=x&ref=y"), "https://a.com/p?id=3&ref=y")
 
 
+class LinkAndBodyLimitTests(unittest.TestCase):
+    def test_clean_link_strips_secrets_userinfo_and_tracking(self):
+        self.assertEqual(clean_link("https://u:p@ex.com/a?id=1&token=x&utm_source=y&sig=z&X-Amz-Signature=q"), "https://ex.com/a?id=1")
+        self.assertEqual(clean_link("https://ex.com/a?id=1&page=2"), "https://ex.com/a?id=1&page=2")  # 무해한 링크는 그대로
+        self.assertEqual(clean_link("http://[::1/bad"), "")  # 해석할 수 없는 URL
+
+    def fake_response(self, chunks, delay=0.0):
+        import time as _t
+        from unittest import mock
+        resp = mock.MagicMock()
+        resp.__enter__.return_value = resp
+        it = iter(chunks)
+
+        def read(n=-1):
+            _t.sleep(delay)
+            return next(it, b"")
+
+        resp.read.side_effect = read
+        return resp
+
+    def test_slow_trickling_response_hits_total_deadline(self):
+        from unittest import mock
+        from rssbot import feed as feedmod
+        resp = self.fake_response([b"x"] * 1000, delay=0.05)  # 소켓 타임아웃에는 안 걸리지만 끝없이 이어지는 응답
+        with mock.patch("urllib.request.urlopen", return_value=resp), mock.patch.object(feedmod, "TOTAL_TIMEOUT", 0.3):
+            with self.assertRaises(FeedError) as ctx:
+                feedmod.fetch_feed("https://ex.com/rss")
+        self.assertIn("시간 초과", str(ctx.exception))
+
+    def test_oversized_body_is_rejected_and_normal_body_is_parsed(self):
+        from unittest import mock
+        from rssbot import feed as feedmod
+        big = self.fake_response([b"a" * 65536] * 100)
+        with mock.patch("urllib.request.urlopen", return_value=big), mock.patch.object(feedmod, "MAX_BYTES", 200000):
+            with self.assertRaises(FeedError):
+                feedmod.fetch_feed("https://ex.com/rss")
+        ok = self.fake_response([RSS[:50], RSS[50:]])
+        with mock.patch("urllib.request.urlopen", return_value=ok):
+            self.assertEqual(feedmod.fetch_feed("https://ex.com/rss").title, "Blog")
+
+
 class FetchErrorMessageTests(unittest.TestCase):
     """오류 문구는 공개 저장소의 상태 파일에 기록될 수 있으므로 URL·예외 원문이 섞이면 안 된다."""
 

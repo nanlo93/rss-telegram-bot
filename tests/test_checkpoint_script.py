@@ -111,6 +111,42 @@ class CommitStateScriptTests(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("gitignore", r.stderr.decode())
 
+    def test_relative_data_dir_is_resolved_from_callers_directory(self):
+        """봇은 호출 위치 기준으로 상태를 저장하므로, 스크립트도 같은 기준으로 해석해야 한다."""
+        sub = os.path.join(self.work, "sub")
+        os.makedirs(os.path.join(sub, "data"))
+        with open(os.path.join(sub, "data", "state.json"), "w") as f:
+            f.write("{}")
+        with open(os.path.join(self.work, "data", "state.json"), "w") as f:
+            f.write('{"top": 1}\n')  # 저장소 루트의 data/도 존재·변경됨 (잘못 해석하면 이쪽을 커밋)
+        env = {**os.environ, "COMMIT_STATE_RETRY_SLEEP": "0", "DATA_DIR": "data"}
+        subprocess.run(["bash", SCRIPT], cwd=sub, check=True, capture_output=True, env=env)
+        files = git(self.remote, "diff-tree", "--no-commit-id", "--name-only", "-r", "main").split()
+        self.assertEqual(files, ["sub/data/state.json"])
+
+    def test_conflicted_rebase_never_pushes_conflict_markers_and_leaves_no_rebase_state(self):
+        """충돌로 멈춘 rebase가 남아 있어도 충돌 마커는 푸시되지 않고 rebase 상태도 남지 않는다. (결과 속성 검증)"""
+        other = os.path.join(self.tmp.name, "other")
+        git(self.tmp.name, "clone", "-q", self.remote, other)
+        ident = ["-c", "user.name=t", "-c", "user.email=t@example.com"]
+        with open(os.path.join(other, "data", "state.json"), "w") as f:
+            f.write('{"v": "remote"}\n')
+        git(other, *ident, "commit", "-qam", "remote change")
+        git(other, "push", "-q", "origin", "main")
+
+        with open(os.path.join(self.work, "data", "state.json"), "w") as f:
+            f.write('{"v": "local"}\n')
+        git(self.work, *ident, "commit", "-qam", "local change")
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=self.work, capture_output=True)  # 충돌로 중단
+        gitdir = os.path.join(self.work, ".git")
+        self.assertTrue(os.path.isdir(os.path.join(gitdir, "rebase-merge")) or os.path.isdir(os.path.join(gitdir, "rebase-apply")))
+
+        self.run_script(check=False)
+        self.assertFalse(os.path.exists(os.path.join(gitdir, "rebase-merge")))
+        self.assertFalse(os.path.exists(os.path.join(gitdir, "rebase-apply")))
+        remote_state = git(self.remote, "show", "main:data/state.json")
+        self.assertNotIn("<<<<<<<", remote_state)  # 충돌 마커가 커밋·푸시되지 않음
+
     def test_rejects_repository_root_as_data_dir(self):
         self.assertNotEqual(self.run_script(check=False, DATA_DIR=".").returncode, 0)
 

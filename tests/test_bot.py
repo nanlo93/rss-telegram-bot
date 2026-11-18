@@ -574,6 +574,61 @@ class RunTests(unittest.TestCase):
         self.assertIn("F6", notified[0])  # 다른 호스트의 정상 피드는 영향 없음
         self.assertEqual(len(self.state()["fails"]), 5)  # 응답 없는 호스트의 피드만 실패로 집계
 
+    def test_delivery_stops_at_time_budget_and_keeps_pending(self):
+        """전송이 오래 걸려도 최종 커밋 시간을 남기도록 한도에서 멈추고, 남은 글은 pending에 둔다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        self.run_bot(FakeTG(fail_sends=99), feed_of("3", "2", "1"))
+        tg = FakeTG()
+        with mock.patch("rssbot.main.DELIVER_BUDGET", 0):
+            self.run_bot(tg, feed_of("3", "2", "1"))
+        self.assertEqual(tg.sent, [])
+        self.assertEqual(len(self.state()["pending"]["1"]), 2)
+        tg2 = FakeTG()
+        self.run_bot(tg2, feed_of("3", "2", "1"))
+        self.assertEqual(len(tg2.sent), 2)
+
+    def test_command_batch_stops_at_time_budget_without_advancing_offset(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        ups = [msg(5, "/list"), msg(6, "/list")]
+        tg = FakeTG(updates=ups)
+        with mock.patch("rssbot.main.COMMAND_BUDGET", 0):
+            self.run_bot(tg, feed_of("1"))
+        self.assertEqual(tg.sent, [])
+        self.assertEqual(self.state()["update_offset"], 0)  # 처리하지 않은 명령은 다음 실행에서
+        tg2 = FakeTG(updates=ups)
+        self.run_bot(tg2, feed_of("1"))
+        self.assertEqual(len(tg2.sent), 2)
+
+    def test_malformed_feed_url_does_not_break_whole_collection(self):
+        with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
+            json.dump({"next_id": 3, "feeds": [
+                {"id": 1, "name": "BAD", "url": "http://[::1/rss"},  # 손으로 고치다 닫는 대괄호를 빠뜨림
+                {"id": 2, "name": "OK", "url": "https://ok.example/rss"}]}, f)
+        self.run_bot(FakeTG(), feed_of("1"))
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("2", "1"))
+        self.assertEqual(len([1 for _, t, _ in tg.sent if "OK" in t and "title-2" in t]), 1)
+
+    def test_checkpoint_timeout_kills_child_processes(self):
+        pidfile = os.path.join(self.tmp.name, "child.pid")
+        cmd = f"bash -c 'sleep 60 & echo $! > {pidfile}; wait'"
+        with mock.patch.dict(os.environ, {"RSSBOT_CHECKPOINT_CMD": cmd}), mock.patch("rssbot.main.CHECKPOINT_TIMEOUT", 0.7):
+            hook = main._hook_from_env()
+            with self.assertRaises(RuntimeError) as ctx:
+                hook()
+        self.assertIn("시간 초과", str(ctx.exception))
+        with open(pidfile) as f:
+            pid = int(f.read().strip())
+        alive = True
+        for _ in range(40):
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                alive = False
+                break
+            threading.Event().wait(0.05)
+        self.assertFalse(alive, "체크포인트의 자식 프로세스가 남아 있음")
+
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
             json.dump({"next_id": 3, "feeds": [

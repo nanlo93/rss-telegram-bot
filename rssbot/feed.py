@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import re
+import time
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -12,7 +13,10 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 USER_AGENT = "rss-telegram-bot/0.1 (+https://github.com/nanlo93/rss-telegram-bot)"
 MAX_BYTES = 5 * 1024 * 1024
-TIMEOUT = 20
+TIMEOUT = 20  # 소켓 단위 타임아웃(초)
+TOTAL_TIMEOUT = 30  # 응답 본문을 받는 전체 시간 한도(초): 소켓 타임아웃보다 짧은 간격으로 조금씩 보내는 서버 대비
+# 이 이름으로 끝나는 쿼리 파라미터는 인증 정보로 본다 (공개 저장소에 기록되지 않도록 걸러내는 기준)
+SECRET_PARAM_SUFFIXES = ("token", "secret", "password", "passwd", "apikey", "api_key", "key", "auth", "sig", "signature", "session")
 
 
 class FeedError(Exception):
@@ -41,12 +45,23 @@ def _text(el) -> str:
 
 
 def clean_link(url: str) -> str:
-    """추적용 utm_* 쿼리 파라미터를 제거한다."""
-    p = urlparse(url)
-    if not p.query:
+    """글 링크에서 추적용 utm_* 파라미터, 인증 정보로 보이는 파라미터, userinfo를 제거한다.
+
+    대기 중인 글은 전송 전에 공개 저장소의 상태 파일에 기록되므로, 서명·토큰이 든 링크가 이력에 남지 않게 한다.
+    """
+    try:
+        p = urlparse(url)
+    except ValueError:  # 잘못된 URL
+        return ""
+    netloc = p.netloc.rsplit("@", 1)[-1]
+    if not p.query and netloc == p.netloc:
         return url
-    q = [(k, v) for k, v in parse_qsl(p.query, keep_blank_values=True) if not k.lower().startswith("utm_")]
-    return urlunparse(p._replace(query=urlencode(q)))
+    q = [
+        (k, v)
+        for k, v in parse_qsl(p.query, keep_blank_values=True)
+        if not k.lower().startswith("utm_") and not k.lower().endswith(SECRET_PARAM_SUFFIXES)
+    ]
+    return urlunparse(p._replace(netloc=netloc, query=urlencode(q)))
 
 
 def _atom_link(entry) -> str:
@@ -126,8 +141,22 @@ def fetch_feed(url: str) -> Feed:
     # 오류 문구는 예외 원문이 아니라 종류별로 정해 둔 문구로 만든다. urllib의 예외 문자열에는 리디렉션 대상 URL 등
     # 민감할 수 있는 값이 섞여 들어가고, 이 문구는 공개 저장소의 상태 파일에 기록될 수 있기 때문이다.
     try:
+        deadline = time.monotonic() + TOTAL_TIMEOUT
+        chunks, size = [], 0
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-            data = resp.read(MAX_BYTES + 1)
+            while True:
+                chunk = resp.read(65536)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                size += len(chunk)
+                if size > MAX_BYTES:
+                    raise FeedError("피드가 너무 큼 (5MB 초과)")
+                if time.monotonic() > deadline:
+                    raise FeedError("응답 시간 초과")
+        data = b"".join(chunks)
+    except FeedError:
+        raise
     except urllib.error.HTTPError as e:
         raise FeedError(f"HTTP {e.code} 응답") from None
     except urllib.error.URLError as e:
@@ -138,8 +167,6 @@ def fetch_feed(url: str) -> Feed:
         raise FeedError("응답 시간 초과") from None
     except Exception as e:
         raise FeedError(f"가져오기 실패 ({type(e).__name__})") from None
-    if len(data) > MAX_BYTES:
-        raise FeedError("피드가 너무 큼 (5MB 초과)")
     try:
         return parse_feed(data)
     except FeedError:

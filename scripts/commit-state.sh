@@ -8,12 +8,19 @@
 # 봇이 체크포인트(write-ahead)마다 호출하고, 워크플로의 마지막 단계에서도 호출한다.
 set -euo pipefail
 
-top="$(cd "$(git rev-parse --show-toplevel)" && pwd -P)"
-cd "$top"
-
+# 호출한 디렉터리 기준으로 DATA_DIR을 절대 경로로 먼저 확정한다. (봇도 같은 기준으로 상태를 저장하므로,
+# 저장소 루트로 이동한 뒤 해석하면 하위 디렉터리에서 실행했을 때 다른 디렉터리를 보게 된다)
 data_dir="${DATA_DIR:-data}"
 mkdir -p "$data_dir"
 abs="$(cd "$data_dir" && pwd -P)"
+
+top="$(cd "$(git rev-parse --show-toplevel)" && pwd -P)"
+cd "$top"
+
+# 이전 체크포인트가 rebase 도중 강제 종료됐다면 남은 rebase 상태를 먼저 정리한다.
+if [ -d "$(git rev-parse --git-path rebase-merge)" ] || [ -d "$(git rev-parse --git-path rebase-apply)" ]; then
+  git rebase --abort >/dev/null 2>&1 || true
+fi
 case "$abs/" in
   "$top"/?*) rel="${abs#"$top"/}" ;;
   *)
@@ -30,7 +37,9 @@ for name in feeds.json state.json; do
   fi
 done
 
-if [ -n "$(git status --porcelain -- "$rel")" ]; then
+# 명령 실패(인덱스 오류 등)가 '변경 없음'으로 오해되지 않도록 조건문 밖에서 실행한다. (set -e)
+changes="$(git status --porcelain -- "$rel")"
+if [ -n "$changes" ]; then
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
   git add -- "$rel"
