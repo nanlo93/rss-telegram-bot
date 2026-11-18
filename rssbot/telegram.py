@@ -1,6 +1,7 @@
 """텔레그램 Bot API 최소 래퍼 (표준 라이브러리만 사용)."""
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.error
@@ -29,9 +30,13 @@ class Telegram:
                     payload = json.load(e)
                 except Exception:
                     raise TelegramError(f"{method}: HTTP {e.code}") from None
-            except urllib.error.URLError as e:
+            except (OSError, http.client.HTTPException) as e:
+                # 타임아웃(TimeoutError)·연결 끊김 등 URLError가 아닌 예외도 포함한다.
                 # 토큰이 URL에 들어 있으므로 예외 메시지를 그대로 노출하지 않는다.
-                raise TelegramError(f"{method}: 네트워크 오류 ({e.reason})") from None
+                reason = getattr(e, "reason", None) or type(e).__name__
+                raise TelegramError(f"{method}: 네트워크 오류 ({reason})") from None
+            except ValueError:  # JSON 해석 실패
+                raise TelegramError(f"{method}: 응답 해석 실패") from None
             if payload.get("ok"):
                 return payload["result"]
             retry_after = (payload.get("parameters") or {}).get("retry_after")

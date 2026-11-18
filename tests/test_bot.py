@@ -214,6 +214,59 @@ class RunTests(unittest.TestCase):
         self.assertNotIn("1", st["pending"])
         self.assertNotIn("1", st["dropped"])
 
+    def test_non_telegram_error_during_send_loses_nothing(self):
+        """TimeoutError처럼 TelegramError가 아닌 예외가 나도 미전송 글은 상태에 남고 실행은 계속된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        tg = FakeTG()
+        tg.send_message = mock.Mock(side_effect=TimeoutError("timed out"))
+        self.run_bot(tg, feed_of("3", "2", "1"))  # 예외가 밖으로 새지 않아야 함
+        self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2", "3"])
+
+        tg2 = FakeTG()
+        self.run_bot(tg2, feed_of("4", "1"))  # 2, 3번 글이 피드에서 빠졌어도
+        texts = [t for _, t, _ in tg2.sent]
+        self.assertEqual(len(texts), 3)
+        self.assertTrue("title-2" in texts[0] and "title-3" in texts[1] and "title-4" in texts[2])
+
+    def test_pending_is_saved_before_sending_even_if_process_is_interrupted(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        tg = FakeTG()
+        tg.send_message = mock.Mock(side_effect=KeyboardInterrupt())  # Exception이 아닌 중단
+        with self.assertRaises(KeyboardInterrupt):
+            self.run_bot(tg, feed_of("3", "2", "1"))
+        self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2", "3"])
+
+    def test_summary_timeout_keeps_queue_and_overflow_count(self):
+        self.run_bot(FakeTG(), feed_of("0"))
+        ids = [str(i) for i in range(12, 0, -1)] + ["0"]
+        tg = FakeTG()
+        tg.send_message = mock.Mock(side_effect=TimeoutError("timed out"))
+        with mock.patch("rssbot.main.MAX_PENDING", 5):
+            self.run_bot(tg, feed_of(*ids))  # 요약 전송이 타임아웃
+        st = self.state()
+        self.assertEqual(len(st["pending"]["1"]), 5)
+        self.assertEqual(st["dropped"]["1"], 7)  # 잘려 나간 건수가 저장됨
+
+    def test_one_broken_feed_does_not_block_others(self):
+        feeds_path = os.path.join(self.tmp.name, "feeds.json")
+        with open(feeds_path, "w") as f:
+            json.dump({"next_id": 3, "feeds": [
+                {"id": 1, "name": "BAD", "url": "https://bad/rss"},
+                {"id": 2, "name": "OK", "url": "https://ok/rss"}]}, f)
+
+        def fetch(url):
+            if "bad" in url:
+                raise ValueError("unexpected")
+            return feed_of("2", "1") if self.second else feed_of("1")
+
+        self.second = False
+        tg = FakeTG()
+        with mock.patch("rssbot.main.fetch_feed", side_effect=fetch):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+            self.second = True
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        self.assertEqual(len([t for _, t, _ in tg.sent if "title-2" in t]), 1)
+
     def test_commands_processed_only_from_owner_and_offset_advances(self):
         tg = FakeTG(updates=[msg(10, "/list"), msg(11, "/list", chat="999")])
         with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):

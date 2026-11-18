@@ -129,4 +129,9 @@ def fetch_feed(url: str) -> Feed:
         raise FeedError(f"가져오기 실패: {e}") from e
     if len(data) > MAX_BYTES:
         raise FeedError("피드가 너무 큼 (5MB 초과)")
-    return parse_feed(data)
+    try:
+        return parse_feed(data)
+    except FeedError:
+        raise
+    except Exception as e:  # 깊게 중첩된 XML 등 예기치 못한 해석 오류
+        raise FeedError(f"피드 해석 중 오류: {type(e).__name__}") from e
