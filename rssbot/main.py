@@ -193,20 +193,24 @@ def deliver(store: Store, tg: Telegram, owner_chat_id: str, messages: list) -> N
 
 # ---------- 실행 ----------
 
-def _checkpoint(store: Store, hook) -> None:
-    """상태를 디스크에 저장하고, 설정된 훅(저장소 커밋·푸시)을 호출한다. 훅이 실패해도 실행은 계속한다."""
+def _checkpoint(store: Store, hook) -> bool:
+    """상태를 디스크에 저장하고, 설정된 훅(저장소 커밋·푸시)을 호출한다. 훅이 실패하면 False."""
     store.save()
     if hook is None:
-        return
+        return True
     try:
         hook()
+        return True
     except Exception as e:
-        log(f"체크포인트 실패 (알림은 계속 진행): {type(e).__name__}: {e}")
+        log(f"체크포인트 실패: {type(e).__name__}: {e}")
+        return False
 
 
-def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None, checkpoint=None) -> None:
+def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None, checkpoint=None) -> bool:
+    """한 번 실행한다. 상태를 저장소에 기록하지 못한 구간이 있었다면 False (호출자가 실패로 알리도록)."""
     store = Store(data_dir)
     tg = tg or Telegram(token)
+    ok = True
     try:
         if store.state.get("commands_v") != COMMANDS_VERSION:
             try:
@@ -220,14 +224,22 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
             messages += process_updates(store, tg, owner_chat_id)
         except Exception as e:  # 명령 수신 실패와 무관하게 새 글 확인은 계속 진행
             log(f"명령 수신 처리 실패: {type(e).__name__}: {e}")
-        _checkpoint(store, checkpoint)  # 명령 반영 + update offset을 먼저 확정 (재시작해도 명령이 재실행되지 않음)
+        if not _checkpoint(store, checkpoint):  # 명령 반영 + update offset을 먼저 확정 (재시작해도 명령이 재실행되지 않음)
+            # 명령 결과를 저장소에 못 남긴 채 진행하면 다음 실행에서 같은 명령이 다시 적용될 수 있다(/remove 등).
+            # 이번 실행은 여기서 멈추고, 워크플로 마지막 단계의 커밋 재시도에 맡긴다.
+            log("명령 반영 상태를 저장소에 기록하지 못해 이번 실행을 중단합니다.")
+            return False
 
         messages += collect_feeds(store)
-        _checkpoint(store, checkpoint)  # 새 글을 pending으로 확정한 뒤에야 전송 (write-ahead)
+        if not _checkpoint(store, checkpoint):  # 새 글을 pending으로 확정한 뒤에야 전송 (write-ahead)
+            # 알림 자체는 보낸다(중복은 감수). 대신 실행을 실패로 표시해 저장 실패를 눈에 띄게 한다.
+            ok = False
+            log("새 글 상태를 저장소에 기록하지 못했습니다. 알림은 계속 전송합니다.")
 
         deliver(store, tg, owner_chat_id, messages)
     finally:
         store.save()
+    return ok
 
 
 def _hook_from_env():
@@ -250,8 +262,8 @@ def main() -> int:
     if not token or not chat_id:
         log("TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID 환경 변수가 필요합니다.")
         return 2
-    run(os.environ.get("DATA_DIR", "data"), token, chat_id, checkpoint=_hook_from_env())
-    return 0
+    ok = run(os.environ.get("DATA_DIR", "data"), token, chat_id, checkpoint=_hook_from_env())
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

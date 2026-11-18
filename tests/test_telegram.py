@@ -35,5 +35,31 @@ class NetworkErrorTests(unittest.TestCase):
         self.assertNotIn("SECRET", self.call(TimeoutError("https://api.telegram.org/bot123:SECRET/sendMessage timed out")))
 
 
+class ErrorClassificationTests(unittest.TestCase):
+    def call(self, code, description):
+        body = ('{"ok": false, "error_code": %d, "description": "%s"}' % (code, description)).encode()
+        err = urllib.error.HTTPError("u", code, "x", {}, io.BytesIO(body))
+        with mock.patch("urllib.request.urlopen", side_effect=err):
+            with self.assertRaises(TelegramError) as ctx:
+                Telegram("1:T").send_message("1", "hi")
+        return ctx.exception
+
+    def test_content_errors_are_permanent(self):
+        self.assertTrue(self.call(400, "Bad Request: can't parse entities: Unsupported start tag").permanent)
+        self.assertTrue(self.call(400, "Bad Request: message is too long").permanent)
+        self.assertTrue(self.call(400, "Bad Request: message text is empty").permanent)
+
+    def test_chat_level_errors_are_not_permanent(self):
+        self.assertFalse(self.call(400, "Bad Request: chat not found").permanent)
+        self.assertFalse(self.call(400, "Bad Request: have no rights to send a message").permanent)
+        self.assertFalse(self.call(400, "Bad Request: PEER_ID_INVALID").permanent)
+        self.assertFalse(self.call(400, "Bad Request: chat_id is empty").permanent)
+
+    def test_other_codes_are_not_permanent(self):
+        self.assertFalse(self.call(403, "Forbidden: bot was blocked by the user").permanent)
+        self.assertFalse(self.call(401, "Unauthorized").permanent)
+        self.assertFalse(self.call(500, "Internal Server Error").permanent)
+
+
 if __name__ == "__main__":
     unittest.main()

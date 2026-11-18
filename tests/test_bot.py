@@ -1,8 +1,10 @@
+import io
 import json
 import os
 import shutil
 import tempfile
 import unittest
+import urllib.error
 from unittest import mock
 
 from rssbot import commands, main
@@ -325,12 +327,44 @@ class RunTests(unittest.TestCase):
         self.assertIn(("cp", 0), events[:first_send])  # 삭제가 반영된 상태가 먼저 커밋됨
         self.assertIn(("offset", 6), events[:first_send])  # 같은 명령이 재실행되지 않도록 offset도 함께
 
-    def test_checkpoint_failure_does_not_stop_delivery(self):
+    def test_command_checkpoint_failure_aborts_run_without_replaying(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        tg = FakeTG(updates=[msg(5, "/remove 1")])
+        ok = None
+        with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, tg, checkpoint=mock.Mock(side_effect=RuntimeError("push 실패")))
+        self.assertFalse(ok)  # 실패로 보고
+        self.assertEqual(tg.sent, [])  # 응답도 알림도 보내지 않고 중단
+        st = Store(self.tmp.name)
+        self.assertEqual(st.items, [])  # 명령 결과와 offset은 디스크에 남아, 마지막 커밋 재시도가 올릴 수 있음
+        self.assertEqual(st.state["update_offset"], 6)
+
+    def test_collect_checkpoint_failure_still_delivers_but_reports_failure(self):
         self.run_bot(FakeTG(), feed_of("1"))
         tg = FakeTG()
+        hook = mock.Mock(side_effect=[None, RuntimeError("push 실패")])  # 두 번째(write-ahead)만 실패
         with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
-            main.run(self.tmp.name, "tok", OWNER, tg, checkpoint=mock.Mock(side_effect=RuntimeError("push 실패")))
-        self.assertEqual(len(tg.sent), 1)
+            ok = main.run(self.tmp.name, "tok", OWNER, tg, checkpoint=hook)
+        self.assertFalse(ok)
+        self.assertEqual(len(tg.sent), 1)  # 알림은 보낸다 (중복은 감수)
+
+    def test_successful_checkpoints_report_ok(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+            self.assertTrue(main.run(self.tmp.name, "tok", OWNER, FakeTG(), checkpoint=lambda: None))
+
+    def test_chat_level_400_keeps_every_pending_item(self):
+        """chat not found 같은 채팅 오류는 HTTP 400이어도 글을 건너뛰면 안 된다. 전부 보존해야 한다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        body = json.dumps({"ok": False, "error_code": 400, "description": "Bad Request: chat not found"}).encode()
+
+        def fake_urlopen(req, data=None, timeout=None):
+            raise urllib.error.HTTPError("u", 400, "Bad Request", {}, io.BytesIO(body))
+
+        with mock.patch("urllib.request.urlopen", side_effect=fake_urlopen), \
+             mock.patch("rssbot.main.fetch_feed", return_value=feed_of("3", "2", "1")):
+            main.run(self.tmp.name, "tok", OWNER)  # 실제 Telegram 클래스 사용
+        self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2", "3"])
 
     def test_telegram_outage_stops_after_first_failure(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:
