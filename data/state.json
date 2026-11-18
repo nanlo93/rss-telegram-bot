@@ -29,25 +29,7 @@
   },
   "fails": {},
   "commands_v": 1,
-  "pending": {
-    "1": [
-      {
-        "id": "https://news.hada.io/topic?id=37395",
-        "title": "USN-9131-1: CRaC JDK 25 vulnerabilities",
-        "link": "https://news.hada.io/topic?id=37395"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37396",
-        "title": "Show GN: Disposable - AI로 만든 작은 도구를 나누고 각자 에이전트로 다시 만드는 곳",
-        "link": "https://news.hada.io/topic?id=37396"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37398",
-        "title": "Show GN: 고객이 직접 문자를 보내는(MO) 방식의 휴대폰 번호 인증 API (웹 SDK 출시)",
-        "link": "https://news.hada.io/topic?id=37398"
-      }
-    ]
-  },
+  "pending": {},
   "dropped": {},
   "outbox": []
 }
