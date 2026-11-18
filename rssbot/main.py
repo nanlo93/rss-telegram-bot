@@ -10,8 +10,9 @@ import os
 import shlex
 import subprocess
 import sys
+import queue
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, wait
 
 from . import commands
 from .feed import Entry, FeedError, fetch_feed
@@ -36,11 +37,22 @@ def log(msg: str) -> None:
 
 # ---------- 1단계: 텔레그램 명령 적용 ----------
 
-def _enqueue(store: Store, texts: list) -> None:
-    """보낼 메시지를 상태의 outbox에 기록한다. 전송에 성공해야 지워지므로, 체크포인트·재시작을 넘어 보존된다."""
+def _enqueue(store: Store, texts: list, droppable: bool = False) -> None:
+    """보낼 메시지를 상태의 outbox에 기록한다. 전송에 성공해야 지워지므로, 체크포인트·재시작을 넘어 보존된다.
+
+    droppable=True(피드 경고 같은 부가 안내)는 자리가 없으면 새 메시지를 버린다. 이미 쌓인 명령 응답을 밀어내지 않는다.
+    (명령의 offset은 이미 확정돼 응답을 다시 만들 수 없지만, 경고는 의미가 크지 않다.)
+    """
     box = store.state["outbox"]
-    box.extend({"text": t} for t in texts)
-    del box[: max(0, len(box) - MAX_OUTBOX)]
+    for t in texts:
+        if not t:
+            continue
+        if len(box) >= MAX_OUTBOX:
+            if droppable:
+                log("outbox가 가득 차 부가 안내를 생략합니다.")
+                continue
+            del box[0]  # 명령 응답은 process_updates가 여유만큼만 가져오므로 보통 도달하지 않는다
+        box.append({"text": t})
 
 
 def process_updates(store: Store, tg: Telegram, owner_chat_id: str) -> None:
@@ -133,6 +145,33 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
         log(f"[{f['name']}] 새 글 {len(new)}건 (전송 대기 {len(queue)}건)")
 
 
+def _fetch_all(feeds: list) -> dict:
+    """피드를 동시에 가져온다. {feed id: (Feed|None, 오류|None)} — 시간 한도 안에 끝나지 않은 피드는 빠진다.
+
+    일꾼 스레드는 daemon이라 응답 없는 서버가 남아 있어도 프로세스 종료를 막지 않는다.
+    """
+    todo: queue.Queue = queue.Queue()
+    for f in feeds:
+        todo.put(f)
+    results: dict = {}
+    deadline = time.monotonic() + COLLECT_BUDGET
+
+    def worker() -> None:
+        while time.monotonic() < deadline:
+            try:
+                f = todo.get_nowait()
+            except queue.Empty:
+                return
+            results[f["id"]] = _fetch_safely(f["url"])
+
+    threads = [threading.Thread(target=worker, daemon=True) for _ in range(min(COLLECT_WORKERS, len(feeds)))]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(max(0.0, deadline - time.monotonic()))
+    return dict(results)  # 시점 고정 복사본: 이후 늦게 끝나는 스레드의 결과는 쓰지 않는다
+
+
 def collect_feeds(store: Store) -> list:
     """모든 구독 피드를 동시에 확인해 새 글을 pending에 기록한다. 보낼 안내 메시지 목록을 돌려준다.
 
@@ -143,15 +182,11 @@ def collect_feeds(store: Store) -> list:
     feeds = list(store.items)
     if not feeds:
         return notices
-    pool = ThreadPoolExecutor(max_workers=COLLECT_WORKERS)
-    futures = {f["id"]: pool.submit(_fetch_safely, f["url"]) for f in feeds}
-    done, _ = wait(list(futures.values()), timeout=COLLECT_BUDGET)
-    pool.shutdown(wait=False, cancel_futures=True)
+    fetched = _fetch_all(feeds)
     for f in feeds:
-        fut = futures[f["id"]]
-        fetched = fut.result() if fut in done else (None, FeedError("시간 초과 (이번 실행에서는 건너뜀)"))
+        result = fetched.get(f["id"], (None, FeedError("시간 초과 (이번 실행에서는 건너뜀)")))
         try:
-            _collect_one(store, f, notices, fetched)
+            _collect_one(store, f, notices, result)
         except Exception as e:  # 한 피드의 예기치 못한 오류가 다른 피드 확인을 막지 않도록
             log(f"[{f['name']}] 처리 중 오류: {type(e).__name__}: {e}")
     return notices
@@ -218,6 +253,13 @@ def flush_outbox(store: Store, tg: Telegram, owner_chat_id: str) -> bool:
     while box:
         try:
             tg.send_message(owner_chat_id, box[0]["text"])
+        except TelegramError as e:
+            if e.permanent:  # 이 메시지 내용 자체가 거부됨: 재시도해도 소용없고 뒤의 전송까지 막으므로 건너뜀
+                log(f"전송할 수 없는 안내라 건너뜀: {e}")
+                box.pop(0)
+                continue
+            log(f"안내 전송 실패, 남은 {len(box)}건은 다음 실행에서 재시도: {type(e).__name__}: {e}")
+            return False
         except Exception as e:
             log(f"안내 전송 실패, 남은 {len(box)}건은 다음 실행에서 재시도: {type(e).__name__}: {e}")
             return False
@@ -244,13 +286,16 @@ def _checkpoint(store: Store, hook) -> bool:
     store.save()
     if hook is None:
         return True
+    ok = True
     try:
         hook()
     except Exception as e:
         log(f"체크포인트 실패: {type(e).__name__}: {e}")
-        return False
-    store.reload()  # rebase로 병합돼 온 원격 변경(예: 손으로 고친 구독 이름)을 이후 save()가 덮어쓰지 않게 함
-    return True
+        ok = False
+    # 성공 여부와 무관하게 다시 읽는다: rebase로 병합된 뒤 push만 실패했어도 작업 트리에는 원격 변경(예: 손으로 고친
+    # 구독 이름)이 들어와 있고, 메모리 상태를 그대로 두면 이후 save()가 그것을 되돌린다.
+    store.reload()
+    return ok
 
 
 def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None, checkpoint=None) -> bool:
@@ -277,7 +322,7 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
             flush_outbox(store, tg, owner_chat_id)  # 명령은 이미 반영됐으니 응답은 보낸다 (실패해도 outbox에 남아 재시도)
             return False
 
-        _enqueue(store, collect_feeds(store))
+        _enqueue(store, collect_feeds(store), droppable=True)
         if not _checkpoint(store, checkpoint):  # 새 글을 pending으로 확정한 뒤에야 전송 (write-ahead)
             # 알림 자체는 보낸다(중복은 감수). 대신 실행을 실패로 표시해 저장 실패를 눈에 띄게 한다.
             ok = False

@@ -88,6 +88,10 @@ class CommandTests(unittest.TestCase):
         self.assertNotIn("private.example", r)
         self.assertIn("<URL>", r)
 
+    def test_redact_handles_any_scheme_and_case(self):
+        for s in ("HTTPS://X.example/?a=1", "see ftp://x.example/y now", "Http://x.example"):
+            self.assertNotIn("example", commands.redact(s))
+
     def test_default_name_is_feed_title(self):
         commands.handle("/add https://ex.com/rss", self.store)
         self.assertEqual(self.store.items[0]["name"], "Fetched")
@@ -416,6 +420,68 @@ class RunTests(unittest.TestCase):
         with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
             main.run(self.tmp.name, "tok", OWNER, FakeTG(), checkpoint=hook)
         self.assertEqual(Store(self.tmp.name).items[0]["name"], "REMOTE-EDIT")
+
+    def test_remote_edit_is_kept_even_if_push_fails_after_rebase(self):
+        """rebase는 끝났는데 push만 실패한 체크포인트에서도, 병합돼 들어온 원격 변경을 되돌리지 않는다."""
+        feeds_path = os.path.join(self.tmp.name, "feeds.json")
+
+        def hook():
+            with open(feeds_path) as f:
+                d = json.load(f)
+            d["feeds"][0]["name"] = "REMOTE-EDIT"
+            with open(feeds_path, "w") as f:
+                json.dump(d, f)
+            raise RuntimeError("push 실패")
+
+        self.run_bot(FakeTG(), feed_of("1"))
+        with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, FakeTG(), checkpoint=hook)
+        self.assertFalse(ok)
+        self.assertEqual(Store(self.tmp.name).items[0]["name"], "REMOTE-EDIT")
+
+    def test_permanently_rejected_outbox_item_does_not_block_everything(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        with open(os.path.join(self.tmp.name, "state.json")) as f:
+            s = json.load(f)
+        s["outbox"] = [{"text": "거부될 안내"}, {"text": "정상 안내"}]
+        with open(os.path.join(self.tmp.name, "state.json"), "w") as f:
+            json.dump(s, f)
+        tg = FakeTG()
+        orig = tg.send_message
+
+        def picky(chat_id, text, html=False):
+            if text == "거부될 안내":
+                raise TelegramError("message text is empty", permanent=True)
+            orig(chat_id, text, html)
+
+        tg.send_message = picky
+        self.run_bot(tg, feed_of("2", "1"))
+        texts = [t for _, t, _ in tg.sent]
+        self.assertEqual(texts[0], "정상 안내")  # 뒤의 안내와
+        self.assertIn("title-2", texts[1])  # 피드 알림이 막히지 않음
+        self.assertEqual(self.state()["outbox"], [])
+
+    def test_chat_level_error_on_outbox_keeps_items_and_retries(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        self.run_bot(FakeTG(updates=[msg(5, "/list")], fail_sends=99), feed_of("1"))  # permanent=False 오류
+        self.assertEqual(len(self.state()["outbox"]), 1)
+
+    def test_feed_warning_never_pushes_out_unsent_command_replies(self):
+        self.run_bot(FakeTG(), feed_of("1"))
+        sp = os.path.join(self.tmp.name, "state.json")
+        with open(sp) as f:
+            s = json.load(f)
+        s["outbox"] = [{"text": f"응답 {i}"} for i in range(main.MAX_OUTBOX)]
+        s["fails"]["1"] = main.FAIL_WARN_AT - 1  # 이번 실패로 경고 시점 도달
+        with open(sp, "w") as f:
+            json.dump(s, f)
+        down = FakeTG(fail_sends=9999)
+        with mock.patch("rssbot.main.fetch_feed", side_effect=FeedError("down")):
+            main.run(self.tmp.name, "tok", OWNER, down)
+        box = self.state()["outbox"]
+        self.assertEqual(len(box), main.MAX_OUTBOX)
+        self.assertEqual(box[0]["text"], "응답 0")  # 가장 오래된 응답이 그대로 남아 있음
+        self.assertFalse(any("연속 확인하지 못했습니다" in b["text"] for b in box))
 
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:

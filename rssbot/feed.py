@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import re
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from xml.parsers import expat
@@ -122,11 +123,21 @@ def fetch_feed(url: str) -> Feed:
     if urlparse(url).scheme not in ("http", "https"):
         raise FeedError("http/https URL만 지원")
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/atom+xml, application/rss+xml, application/xml, text/xml, */*"})
+    # 오류 문구는 예외 원문이 아니라 종류별로 정해 둔 문구로 만든다. urllib의 예외 문자열에는 리디렉션 대상 URL 등
+    # 민감할 수 있는 값이 섞여 들어가고, 이 문구는 공개 저장소의 상태 파일에 기록될 수 있기 때문이다.
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             data = resp.read(MAX_BYTES + 1)
-    except Exception as e:  # URLError, HTTPError, timeout 등
-        raise FeedError(f"가져오기 실패: {e}") from e
+    except urllib.error.HTTPError as e:
+        raise FeedError(f"HTTP {e.code} 응답") from None
+    except urllib.error.URLError as e:
+        reason = e.reason
+        detail = reason.strerror if isinstance(reason, OSError) and reason.strerror else type(reason).__name__
+        raise FeedError(f"연결 실패 ({detail})") from None
+    except TimeoutError:
+        raise FeedError("응답 시간 초과") from None
+    except Exception as e:
+        raise FeedError(f"가져오기 실패 ({type(e).__name__})") from None
     if len(data) > MAX_BYTES:
         raise FeedError("피드가 너무 큼 (5MB 초과)")
     try:

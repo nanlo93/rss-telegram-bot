@@ -33,7 +33,7 @@ def _valid_url(url: str) -> bool:
     return p.scheme in ("http", "https") and bool(p.netloc)
 
 
-_URL_RE = re.compile(r"https?://\S+")
+_URL_RE = re.compile(r"[a-z][a-z0-9+.\-]*://\S+", re.IGNORECASE)  # 스킴·대소문자와 무관하게
 _SECRET_PARAM_SUFFIXES = ("token", "secret", "password", "passwd", "apikey", "api_key", "key", "auth", "sig", "signature", "session")
 
 

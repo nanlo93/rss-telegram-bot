@@ -66,5 +66,37 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(clean_link("https://a.com/p?id=3&utm_source=x&ref=y"), "https://a.com/p?id=3&ref=y")
 
 
+class FetchErrorMessageTests(unittest.TestCase):
+    """오류 문구는 공개 저장소의 상태 파일에 기록될 수 있으므로 URL·예외 원문이 섞이면 안 된다."""
+
+    def message(self, exc):
+        from unittest import mock
+        from rssbot.feed import fetch_feed
+        with mock.patch("urllib.request.urlopen", side_effect=exc):
+            with self.assertRaises(FeedError) as ctx:
+                fetch_feed("https://ex.com/rss")
+        return str(ctx.exception)
+
+    def test_http_error_does_not_include_message_or_url(self):
+        import urllib.error
+        e = urllib.error.HTTPError("https://leak.example/x?token=1", 302, "Found https://leak2.example/y", {}, None)
+        msg = self.message(e)
+        self.assertEqual(msg, "HTTP 302 응답")
+
+    def test_url_error_uses_errno_text_only(self):
+        import urllib.error
+        msg = self.message(urllib.error.URLError(OSError(8, "nodename nor servname provided, or not known")))
+        self.assertIn("nodename", msg)
+        msg2 = self.message(urllib.error.URLError("redirect to https://leak.example/?session=abc"))
+        self.assertNotIn("leak", msg2)
+        self.assertNotIn("session", msg2)
+
+    def test_timeout_and_unexpected_errors(self):
+        self.assertEqual(self.message(TimeoutError("https://leak.example")), "응답 시간 초과")
+        msg = self.message(RuntimeError("boom https://leak.example/?k=1"))
+        self.assertNotIn("leak", msg)
+        self.assertIn("RuntimeError", msg)
+
+
 if __name__ == "__main__":
     unittest.main()

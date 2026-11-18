@@ -22,6 +22,14 @@ case "$abs/" in
     ;;
 esac
 
+# Git이 무시하는 경로면 변경이 있어도 status에 나타나지 않아, 저장하지 못한 채 성공으로 끝나게 된다. 명시적으로 실패 처리.
+for name in feeds.json state.json; do
+  if git check-ignore -q -- "$rel/$name"; then
+    echo "$rel/$name 이(가) .gitignore 대상이라 커밋할 수 없습니다." >&2
+    exit 1
+  fi
+done
+
 if [ -n "$(git status --porcelain -- "$rel")" ]; then
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

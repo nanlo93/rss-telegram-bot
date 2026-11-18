@@ -100,6 +100,17 @@ class CommitStateScriptTests(unittest.TestCase):
         self.assertIn("저장소", r.stderr.decode())
         self.assertEqual(self.count(), 1)
 
+    def test_rejects_gitignored_data_dir(self):
+        """ignore 대상이면 status에 안 나타나 '변경 없음'으로 성공해 버리므로 실패로 처리해야 한다."""
+        with open(os.path.join(self.work, ".gitignore"), "w") as f:
+            f.write("custom/\n")
+        os.makedirs(os.path.join(self.work, "custom", "state"))
+        with open(os.path.join(self.work, "custom", "state", "state.json"), "w") as f:
+            f.write("{}")
+        r = self.run_script(check=False, DATA_DIR="custom/state")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("gitignore", r.stderr.decode())
+
     def test_rejects_repository_root_as_data_dir(self):
         self.assertNotEqual(self.run_script(check=False, DATA_DIR=".").returncode, 0)
 
