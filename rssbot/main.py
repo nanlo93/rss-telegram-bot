@@ -7,12 +7,13 @@ import sys
 import time
 
 from . import commands
-from .feed import FeedError, fetch_feed
+from .feed import Entry, FeedError, fetch_feed
 from .store import SEEN_LIMIT, Store
 from .telegram import Telegram, TelegramError
 
 COMMANDS_VERSION = 1  # commands.COMMANDS를 바꾸면 올려서 메뉴를 다시 등록
 MAX_PER_FEED = 10  # 한 번에 알리는 최대 글 수 (초과분은 요약)
+MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피드당)
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
 
@@ -50,6 +51,10 @@ def format_entry(feed_name: str, entry) -> str:
     return head + title
 
 
+def _queue_item(e: Entry) -> dict:
+    return {"id": e.id, "title": e.title, "link": e.link}
+
+
 def poll_feeds(store: Store, tg: Telegram, owner_chat_id: str) -> None:
     for f in store.items:
         fid = str(f["id"])
@@ -60,7 +65,10 @@ def poll_feeds(store: Store, tg: Telegram, owner_chat_id: str) -> None:
             store.state["fails"][fid] = fails
             log(f"[{f['name']}] 확인 실패 ({fails}회 연속): {e}")
             if fails == FAIL_WARN_AT:
-                tg.send_message(owner_chat_id, f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {e}")
+                try:
+                    tg.send_message(owner_chat_id, f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {e}")
+                except TelegramError as err:
+                    log(f"[{f['name']}] 경고 전송 실패: {err}")
             continue
         store.state["fails"].pop(fid, None)
 
@@ -71,36 +79,38 @@ def poll_feeds(store: Store, tg: Telegram, owner_chat_id: str) -> None:
             log(f"[{f['name']}] 기준선 등록: {len(current_ids)}건")
             continue
 
-        seen = set(old)
-        new = [e for e in parsed.entries if e.id not in seen]
-        if not new:
-            continue
-        log(f"[{f['name']}] 새 글 {len(new)}건")
+        # 전송 실패분은 pending에 글 내용째 보관하므로, 다음 응답에서 피드가 그 글을 빼도 누락되지 않는다.
+        pending = store.state["pending"].get(fid, [])
+        known = set(old) | {p["id"] for p in pending}
+        new = [_queue_item(e) for e in reversed(parsed.entries) if e.id not in known]  # 오래된 글부터
 
-        new.reverse()  # 오래된 글부터 알림
-        skipped = max(0, len(new) - MAX_PER_FEED)
-        to_send = new[skipped:]
-        sent_ids = [e.id for e in new[:skipped]]  # 생략분은 알림 없이 본 것으로 처리
-        failed = False
-        for e in to_send:
-            try:
-                tg.send_message(owner_chat_id, format_entry(f["name"], e), html=True)
-            except TelegramError as err:
-                log(f"[{f['name']}] 전송 실패, 다음 실행에서 재시도: {err}")
-                failed = True
-                break
-            sent_ids.append(e.id)
-            time.sleep(SEND_INTERVAL)
-        if skipped and not failed:
-            try:
-                tg.send_message(owner_chat_id, f"'{f['name']}' 새 글이 많아 {skipped}건은 알림을 생략했습니다.")
-            except TelegramError:
-                pass
-
+        # 관측한 글은 전송 여부와 무관하게 seen에 기록하고, 미전송분의 책임은 pending이 진다.
         merged = current_ids + [i for i in old if i not in set(current_ids)]
-        unsent = {e.id for e in new} - set(sent_ids)  # 전송 실패로 남은 글은 다음에 다시 시도
-        merged = [i for i in merged if i not in unsent]
         store.state["seen"][fid] = merged[: max(SEEN_LIMIT, len(current_ids))]
+
+        queue = pending + new
+        if not queue:
+            continue
+        log(f"[{f['name']}] 전송 대기 {len(queue)}건 (신규 {len(new)}건)")
+
+        skipped = max(0, len(queue) - MAX_PER_FEED)
+        to_send = queue[skipped:]
+        remaining = queue  # 전송 도중 실패하면 아직 안 보낸 글부터 다시 시도
+        try:
+            if skipped:
+                tg.send_message(owner_chat_id, f"'{f['name']}' 새 글이 많아 오래된 {skipped}건은 알림을 생략하고 최신 {len(to_send)}건만 알립니다.")
+                remaining = to_send
+            for idx, item in enumerate(to_send):
+                tg.send_message(owner_chat_id, format_entry(f["name"], Entry(**item)), html=True)
+                remaining = to_send[idx + 1 :]
+                time.sleep(SEND_INTERVAL)
+        except TelegramError as err:
+            log(f"[{f['name']}] 전송 실패, 남은 {len(remaining)}건은 다음 실행에서 재시도: {err}")
+
+        if remaining:
+            store.state["pending"][fid] = remaining[-MAX_PENDING:]
+        else:
+            store.state["pending"].pop(fid, None)
 
 
 def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None) -> None:

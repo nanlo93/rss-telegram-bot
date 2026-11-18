@@ -138,6 +138,46 @@ class RunTests(unittest.TestCase):
         tg3 = FakeTG()
         self.run_bot(tg3, feed_of("2", "1"))
         self.assertEqual(len(tg3.sent), 1)
+        self.assertNotIn("1", self.state()["pending"])  # 전송 성공 후 대기열 비움
+
+    def test_failed_send_survives_entry_dropping_out_of_feed(self):
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("1"))
+        self.run_bot(FakeTG(fail_sends=99), feed_of("2", "1"))  # 2번 글 전송 실패
+        tg3 = FakeTG()
+        self.run_bot(tg3, feed_of("3", "1"))  # 다음 응답에서 2번 글이 빠졌더라도
+        texts = [t for _, t, _ in tg3.sent]
+        self.assertEqual(len(texts), 2)
+        self.assertIn("title-2", texts[0])  # 누락 없이 오래된 순으로
+        self.assertIn("title-3", texts[1])
+
+    def test_partial_failure_keeps_only_unsent(self):
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("0"))
+        tg2 = FakeTG()
+        orig = tg2.send_message
+        calls = {"n": 0}
+
+        def flaky(chat_id, text, html=False):
+            calls["n"] += 1
+            if calls["n"] == 2:
+                raise TelegramError("boom")
+            orig(chat_id, text, html)
+
+        tg2.send_message = flaky
+        self.run_bot(tg2, feed_of("3", "2", "1", "0"))
+        self.assertEqual(len(tg2.sent), 1)  # 1번만 성공
+        self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2", "3"])
+        tg3 = FakeTG()
+        self.run_bot(tg3, feed_of("3", "2", "1", "0"))
+        self.assertEqual([t for _, t, _ in tg3.sent if "title-" in t].__len__(), 2)
+
+    def test_summary_failure_loses_nothing(self):
+        tg = FakeTG()
+        self.run_bot(tg, feed_of("0"))
+        ids = [str(i) for i in range(15, 0, -1)] + ["0"]
+        self.run_bot(FakeTG(fail_sends=99), feed_of(*ids))
+        self.assertEqual(len(self.state()["pending"]["1"]), 15)
 
     def test_flood_is_capped_with_summary(self):
         tg = FakeTG()
@@ -145,7 +185,10 @@ class RunTests(unittest.TestCase):
         ids = [str(i) for i in range(15, 0, -1)] + ["0"]
         self.run_bot(tg, feed_of(*ids))
         self.assertEqual(len(tg.sent), main.MAX_PER_FEED + 1)
-        self.assertIn("생략", tg.sent[-1][1])
+        self.assertIn("생략", tg.sent[0][1])  # 요약 안내가 먼저
+        self.assertIn("title-6", tg.sent[1][1])  # 이어서 최신 10건을 오래된 순으로
+        self.assertIn("title-15", tg.sent[-1][1])
+        self.assertNotIn("1", self.state()["pending"])
 
     def test_commands_processed_only_from_owner_and_offset_advances(self):
         tg = FakeTG(updates=[msg(10, "/list"), msg(11, "/list", chat="999")])

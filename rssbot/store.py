@@ -24,7 +24,8 @@ def _dump(path: str, obj: dict) -> None:
 
 class Store:
     """feeds: {"next_id": int, "feeds": [{"id","name","url"}]}
-    state: {"update_offset": int, "seen": {feed_id: [글 ID]}, "fails": {feed_id: int}, "commands_v": int}
+    state: {"update_offset": int, "seen": {feed_id: [글 ID]}, "pending": {feed_id: [{"id","title","link"}]},
+    "fails": {feed_id: int}, "commands_v": int}
     """
 
     def __init__(self, data_dir: str):
@@ -32,8 +33,8 @@ class Store:
         self.state_path = os.path.join(data_dir, "state.json")
         os.makedirs(data_dir, exist_ok=True)
         self.feeds = _load(self.feeds_path, {"next_id": 1, "feeds": []})
-        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "fails": {}, "commands_v": 0})
-        for key, default in (("seen", {}), ("fails", {})):
+        self.state = _load(self.state_path, {"update_offset": 0, "seen": {}, "pending": {}, "fails": {}, "commands_v": 0})
+        for key, default in (("seen", {}), ("pending", {}), ("fails", {})):
             self.state.setdefault(key, default)
 
     @property
@@ -49,11 +50,12 @@ class Store:
 
     def remove(self, feed: dict) -> None:
         self.items.remove(feed)
-        self.state["seen"].pop(str(feed["id"]), None)
-        self.state["fails"].pop(str(feed["id"]), None)
+        for key in ("seen", "pending", "fails"):
+            self.state[key].pop(str(feed["id"]), None)
 
     def reset_seen(self, feed: dict, seen_ids: list) -> None:
         self.state["seen"][str(feed["id"])] = list(seen_ids)[:SEEN_LIMIT]
+        self.state["pending"].pop(str(feed["id"]), None)  # 주소가 바뀌면 이전 피드의 미전송분은 폐기
         self.state["fails"].pop(str(feed["id"]), None)
 
     def save(self) -> None:
