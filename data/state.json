@@ -2,6 +2,11 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37408",
+      "https://news.hada.io/topic?id=37406",
+      "https://news.hada.io/topic?id=37405",
+      "https://news.hada.io/topic?id=37404",
+      "https://news.hada.io/topic?id=37403",
       "https://news.hada.io/topic?id=37402",
       "https://news.hada.io/topic?id=37401",
       "https://news.hada.io/topic?id=37400",
@@ -32,7 +37,35 @@
   },
   "fails": {},
   "commands_v": 1,
-  "pending": {},
+  "pending": {
+    "1": [
+      {
+        "id": "https://news.hada.io/topic?id=37403",
+        "title": "AI가 All About Berlin을 죽이고 있다",
+        "link": "https://news.hada.io/topic?id=37403"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37404",
+        "title": "Archive Team, 2026년 11월 20일 폐쇄되는 Apple Support Community 아카이빙 진행 중",
+        "link": "https://news.hada.io/topic?id=37404"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37405",
+        "title": "Harvard 연구진, AI 코딩 에이전트가 병목을 코드 리뷰로 옮겼음을 확인",
+        "link": "https://news.hada.io/topic?id=37405"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37406",
+        "title": "Show GN: Clippy HTML - Clippy의 진단을 정적 웹페이지로 바꿔주는 도구",
+        "link": "https://news.hada.io/topic?id=37406"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37408",
+        "title": "Codeberg.org 접속 불가",
+        "link": "https://news.hada.io/topic?id=37408"
+      }
+    ]
+  },
   "dropped": {},
   "outbox": [],
   "rebase": {},
