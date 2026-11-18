@@ -16,7 +16,7 @@ MAX_BYTES = 5 * 1024 * 1024
 TIMEOUT = 20  # 소켓 단위 타임아웃(초)
 TOTAL_TIMEOUT = 30  # 응답 본문을 받는 전체 시간 한도(초): 소켓 타임아웃보다 짧은 간격으로 조금씩 보내는 서버 대비
 # 이 이름으로 끝나는 쿼리 파라미터는 인증 정보로 본다 (공개 저장소에 기록되지 않도록 걸러내는 기준)
-SECRET_PARAM_SUFFIXES = ("token", "secret", "password", "passwd", "apikey", "api_key", "key", "auth", "sig", "signature", "session")
+SECRET_PARAM_SUFFIXES = ("token", "secret", "password", "passwd", "apikey", "api_key", "key", "auth", "sig", "signature", "session", "sessionid")
 
 
 class FeedError(Exception):
@@ -44,24 +44,43 @@ def _text(el) -> str:
     return (el.text or "").strip() if el is not None else ""
 
 
+def _param_keys(text: str) -> list:
+    # ';'도 구분자로 본다: 'a=1;token=x'를 '&' 기준으로만 나누면 token이 a의 값에 숨는다.
+    return [k for k, _ in parse_qsl(text.replace(";", "&"), keep_blank_values=True)]
+
+
+def find_secret_param(url: str):
+    """URL의 쿼리·경로 파라미터(;a=b)·fragment(#a=b)에서 인증 정보로 보이는 키를 찾아 돌려준다. 없으면 None."""
+    try:
+        p = urlparse(url)
+    except ValueError:
+        return None
+    for part in (p.query, p.params, p.fragment):
+        for key in _param_keys(part):
+            if key.lower().endswith(SECRET_PARAM_SUFFIXES):
+                return key
+    return None
+
+
 def clean_link(url: str) -> str:
-    """글 링크에서 추적용 utm_* 파라미터, 인증 정보로 보이는 파라미터, userinfo를 제거한다.
+    """글 링크에서 추적용 utm_* 파라미터, 인증 정보로 보이는 파라미터, userinfo, 경로 파라미터, fragment를 제거한다.
 
     대기 중인 글은 전송 전에 공개 저장소의 상태 파일에 기록되므로, 서명·토큰이 든 링크가 이력에 남지 않게 한다.
+    fragment(#...)와 경로 파라미터(;...)는 구조가 제각각이라 걸러내는 대신 통째로 지운다.
     """
     try:
         p = urlparse(url)
     except ValueError:  # 잘못된 URL
         return ""
     netloc = p.netloc.rsplit("@", 1)[-1]
-    if not p.query and netloc == p.netloc:
+    if not (p.query or p.params or p.fragment) and netloc == p.netloc:
         return url
     q = [
         (k, v)
-        for k, v in parse_qsl(p.query, keep_blank_values=True)
+        for k, v in parse_qsl(p.query.replace(";", "&"), keep_blank_values=True)
         if not k.lower().startswith("utm_") and not k.lower().endswith(SECRET_PARAM_SUFFIXES)
     ]
-    return urlunparse(p._replace(netloc=netloc, query=urlencode(q)))
+    return urlunparse(p._replace(netloc=netloc, params="", query=urlencode(q), fragment=""))
 
 
 def _atom_link(entry) -> str:

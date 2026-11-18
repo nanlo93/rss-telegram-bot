@@ -79,6 +79,8 @@ class CommandTests(unittest.TestCase):
         for ok in ("https://ex.com/rss?channel_id=UC123", "https://ex.com/feed?keyword=swift", "https://ex.com/rss"):
             self.assertIn("추가했습니다", commands.handle(f"/add {ok}", self.store), ok)
         self.assertIn("등록할 수 없습니다", commands.handle("/edit 1 url https://ex.com/rss?secret=1", self.store))
+        for hidden in ("https://ex.com/rss#access_token=1", "https://ex.com/rss;jsessionid=abc", "https://ex.com/rss?a=1;token=x"):
+            self.assertIn("등록할 수 없습니다", commands.handle(f"/add {hidden}", self.store), hidden)
 
     def test_error_replies_do_not_leak_urls(self):
         err = FeedError("가져오기 실패: HTTP Error 302 -> https://private.example/rss?x=1 (redirect)")
@@ -628,6 +630,44 @@ class RunTests(unittest.TestCase):
                 break
             threading.Event().wait(0.05)
         self.assertFalse(alive, "체크포인트의 자식 프로세스가 남아 있음")
+
+    def test_hard_limit_interrupts_blocking_call_and_saves_state(self):
+        """단계별 한도를 지나 블로킹된 호출이 있어도 전체 한도에서 끊고, 미전송 글은 상태에 남긴다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        tg = FakeTG()
+        block = threading.Event()
+        self.addCleanup(block.set)
+        tg.send_message = lambda *a, **k: block.wait(30)  # 응답 없는 텔레그램 호출
+        started = time.monotonic()
+        with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("2", "1")):
+            ok = main.run(self.tmp.name, "tok", OWNER, tg, hard_limit=1)
+        self.assertFalse(ok)
+        self.assertLess(time.monotonic() - started, 6)
+        self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2"])  # 최종 커밋이 올릴 상태가 저장됨
+
+    def test_hard_limit_is_not_swallowed_by_except_exception(self):
+        self.assertFalse(issubclass(main.RunTimeout, Exception))
+
+    def test_hard_limit_kills_checkpoint_child_processes(self):
+        pidfile = os.path.join(self.tmp.name, "hook.pid")
+        cmd = f"bash -c 'sleep 60 & echo $! > {pidfile}; wait'"
+        self.run_bot(FakeTG(), feed_of("1"))
+        with mock.patch.dict(os.environ, {"RSSBOT_CHECKPOINT_CMD": cmd}), mock.patch("rssbot.main.CHECKPOINT_TIMEOUT", 60):
+            hook = main._hook_from_env()
+            with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")):
+                ok = main.run(self.tmp.name, "tok", OWNER, FakeTG(), checkpoint=hook, hard_limit=1)
+        self.assertFalse(ok)
+        with open(pidfile) as f:
+            pid = int(f.read().strip())
+        alive = True
+        for _ in range(40):
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                alive = False
+                break
+            threading.Event().wait(0.05)
+        self.assertFalse(alive)
 
     def test_slow_feeds_do_not_consume_delivery_time(self):
         with open(os.path.join(self.tmp.name, "feeds.json"), "w") as f:

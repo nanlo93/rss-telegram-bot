@@ -35,4 +35,5 @@ jobs:
           RSSBOT_CHECKPOINT_CMD: bash scripts/commit-state.sh
       - name: 상태 파일 커밋
         if: always()
+        timeout-minutes: 3
         run: bash scripts/commit-state.sh

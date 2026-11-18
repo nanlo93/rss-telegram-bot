@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import urlparse
 
-from .feed import SECRET_PARAM_SUFFIXES, FeedError, fetch_feed
+from .feed import FeedError, fetch_feed, find_secret_param
 from .store import Store
 
 MAX_FEEDS = 50
@@ -49,9 +49,9 @@ def unsafe_url_reason(url: str):
     p = urlparse(url)
     if p.username or p.password:
         return "URL에 아이디·비밀번호가 들어 있습니다"
-    for key, _ in parse_qsl(p.query, keep_blank_values=True):
-        if key.lower().endswith(SECRET_PARAM_SUFFIXES):
-            return f"URL의 '{key}' 값이 인증 정보로 보입니다"
+    key = find_secret_param(url)  # 쿼리뿐 아니라 ';' 구분 파라미터, 경로 파라미터, fragment까지 검사
+    if key:
+        return f"URL의 '{key}' 값이 인증 정보로 보입니다"
     return None
 
 

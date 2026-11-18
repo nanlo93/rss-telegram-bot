@@ -27,7 +27,7 @@ class CommitStateScriptTests(unittest.TestCase):
         git(self.work, "push", "-q", "-u", "origin", "main")
 
     def run_script(self, check=True, **extra_env):
-        env = {**os.environ, "COMMIT_STATE_RETRY_SLEEP": "0", **extra_env}
+        env = {**os.environ, "COMMIT_STATE_RETRY_SLEEP": "0", "GITHUB_ACTIONS": "", **extra_env}
         return subprocess.run(["bash", SCRIPT], cwd=self.work, check=check, capture_output=True, env=env)
 
     def count(self):
@@ -124,8 +124,7 @@ class CommitStateScriptTests(unittest.TestCase):
         files = git(self.remote, "diff-tree", "--no-commit-id", "--name-only", "-r", "main").split()
         self.assertEqual(files, ["sub/data/state.json"])
 
-    def test_conflicted_rebase_never_pushes_conflict_markers_and_leaves_no_rebase_state(self):
-        """충돌로 멈춘 rebase가 남아 있어도 충돌 마커는 푸시되지 않고 rebase 상태도 남지 않는다. (결과 속성 검증)"""
+    def _make_conflicted_rebase(self):
         other = os.path.join(self.tmp.name, "other")
         git(self.tmp.name, "clone", "-q", self.remote, other)
         ident = ["-c", "user.name=t", "-c", "user.email=t@example.com"]
@@ -133,15 +132,28 @@ class CommitStateScriptTests(unittest.TestCase):
             f.write('{"v": "remote"}\n')
         git(other, *ident, "commit", "-qam", "remote change")
         git(other, "push", "-q", "origin", "main")
-
         with open(os.path.join(self.work, "data", "state.json"), "w") as f:
             f.write('{"v": "local"}\n')
         git(self.work, *ident, "commit", "-qam", "local change")
         subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=self.work, capture_output=True)  # 충돌로 중단
         gitdir = os.path.join(self.work, ".git")
         self.assertTrue(os.path.isdir(os.path.join(gitdir, "rebase-merge")) or os.path.isdir(os.path.join(gitdir, "rebase-apply")))
+        return gitdir
 
-        self.run_script(check=False)
+    def test_local_run_never_aborts_users_in_progress_rebase(self):
+        """로컬(비 CI)에서는 사용자가 직접 진행 중인 rebase를 취소하면 안 된다. 아무것도 하지 않고 실패로 알린다."""
+        gitdir = self._make_conflicted_rebase()
+        before = git(self.work, "status", "--porcelain")
+        r = self.run_script(check=False)  # GITHUB_ACTIONS 비어 있음 = 로컬
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("rebase", r.stderr.decode())
+        self.assertTrue(os.path.isdir(os.path.join(gitdir, "rebase-merge")) or os.path.isdir(os.path.join(gitdir, "rebase-apply")))
+        self.assertEqual(git(self.work, "status", "--porcelain"), before)  # 작업 트리도 그대로
+
+    def test_ci_cleans_leftover_rebase_and_never_pushes_conflict_markers(self):
+        """CI에서는 강제 종료로 남은 rebase를 정리하고, 충돌 마커는 푸시되지 않는다. (결과 속성 검증)"""
+        gitdir = self._make_conflicted_rebase()
+        self.run_script(check=False, GITHUB_ACTIONS="true")
         self.assertFalse(os.path.exists(os.path.join(gitdir, "rebase-merge")))
         self.assertFalse(os.path.exists(os.path.join(gitdir, "rebase-apply")))
         remote_state = git(self.remote, "show", "main:data/state.json")

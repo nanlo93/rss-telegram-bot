@@ -17,9 +17,16 @@ abs="$(cd "$data_dir" && pwd -P)"
 top="$(cd "$(git rev-parse --show-toplevel)" && pwd -P)"
 cd "$top"
 
-# 이전 체크포인트가 rebase 도중 강제 종료됐다면 남은 rebase 상태를 먼저 정리한다.
+# 진행 중인 rebase가 있으면:
+# - CI(GitHub Actions)에서는 이전 체크포인트가 rebase 도중 강제 종료돼 남은 흔적이므로 정리한다.
+# - 그 밖의 환경(로컬 실행)에서는 사용자가 직접 진행 중인 rebase일 수 있어 건드리지 않고 중단한다.
 if [ -d "$(git rev-parse --git-path rebase-merge)" ] || [ -d "$(git rev-parse --git-path rebase-apply)" ]; then
-  git rebase --abort >/dev/null 2>&1 || true
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    git rebase --abort >/dev/null 2>&1 || true
+  else
+    echo "진행 중인 rebase가 있어 상태를 커밋하지 않습니다. 직접 마무리(--continue 또는 --abort)한 뒤 다시 실행하세요." >&2
+    exit 1
+  fi
 fi
 case "$abs/" in
   "$top"/?*) rel="${abs#"$top"/}" ;;

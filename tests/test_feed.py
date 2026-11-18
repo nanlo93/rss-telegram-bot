@@ -72,6 +72,11 @@ class LinkAndBodyLimitTests(unittest.TestCase):
         self.assertEqual(clean_link("https://ex.com/a?id=1&page=2"), "https://ex.com/a?id=1&page=2")  # 무해한 링크는 그대로
         self.assertEqual(clean_link("http://[::1/bad"), "")  # 해석할 수 없는 URL
 
+    def test_clean_link_removes_fragment_path_params_and_semicolon_separated_secrets(self):
+        self.assertEqual(clean_link("https://ex.com/a;jsessionid=abc?id=1#access_token=xyz"), "https://ex.com/a?id=1")
+        self.assertEqual(clean_link("https://ex.com/a?id=1;token=x"), "https://ex.com/a?id=1")  # ';'로 숨긴 token
+        self.assertEqual(clean_link("https://ex.com/a?id=1#section"), "https://ex.com/a?id=1")  # fragment는 통째로 제거
+
     def fake_response(self, chunks, delay=0.0):
         import time as _t
         from unittest import mock

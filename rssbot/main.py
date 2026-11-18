@@ -31,6 +31,7 @@ MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최�
 MAX_UPDATES_PER_RUN = 25  # 한 번에 가져와 처리하는 텔레그램 명령 수 (나머지는 다음 실행에서)
 COLLECT_WORKERS = commands.MAX_FEEDS  # 허용된 구독 수만큼 일꾼을 둬, 응답 없는 피드가 앞에 몰려도 뒤 피드가 굶지 않게 함 (피드마다 전용 스레드)
 PER_HOST_LIMIT = 2  # 같은 호스트로 동시에 보내는 요청 수 (몰리면 429·차단을 맞아 정상 피드가 반복 누락됨)
+RUN_HARD_LIMIT = 420  # 한 번 실행의 하드 한도(초). 실행 제한 10분 중 체크아웃·최종 커밋(상태 파일 저장) 시간을 남긴다
 COMMAND_BUDGET = 120  # 텔레그램 명령 처리 단계의 시간 한도(초). 넘기면 남은 명령은 다음 실행에서 (offset이 안 넘어감)
 DELIVER_BUDGET = 300  # 전송 단계의 시간 한도(초). 넘기면 남은 글은 pending에 두고 끝낸다 (최종 커밋 시간 확보)
 COLLECT_BUDGET = 150  # 수집 단계 전체 시간 한도(초). 넘기면 못 가져온 피드는 이번 실행에서 건너뜀
@@ -39,6 +40,10 @@ CHECKPOINT_TIMEOUT = 120
 
 def log(msg: str) -> None:
     print(msg, flush=True)
+
+
+class RunTimeout(BaseException):
+    """실행 전체 시간 한도 초과. Exception이 아니라서 곳곳의 'except Exception'에 삼켜지지 않고, finally(상태 저장)는 실행된다."""
 
 
 # ---------- 1단계: 텔레그램 명령 적용 ----------
@@ -334,11 +339,23 @@ def _checkpoint(store: Store, hook) -> bool:
     return ok
 
 
-def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None, checkpoint=None) -> bool:
+def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = None, checkpoint=None,
+        hard_limit: float | None = None) -> bool:
     """한 번 실행한다. 상태를 저장소에 기록하지 못한 구간이 있었다면 False (호출자가 실패로 알리도록)."""
     store = Store(data_dir)
     tg = tg or Telegram(token)
     ok = True
+    # 단계별 한도는 "대체로" 지켜질 뿐이라(진행 중인 요청·재시도 대기 등) 더하면 실행 제한을 넘길 수 있다.
+    # 그래서 전체 한도를 SIGALRM으로 강제한다: 블로킹 중인 호출도 끊고, finally에서 상태를 저장한 뒤 실패로 끝낸다.
+    # (최종 커밋은 별도 워크플로 단계에서 하므로, 그 시간을 남기려고 실행 제한보다 짧게 잡는다)
+    use_alarm = bool(hard_limit) and hasattr(signal, "SIGALRM") and threading.current_thread() is threading.main_thread()
+    old_handler = None
+    if use_alarm:
+        def on_alarm(signum, frame):
+            raise RunTimeout()
+
+        old_handler = signal.signal(signal.SIGALRM, on_alarm)
+        signal.alarm(int(hard_limit))
     try:
         if store.state.get("commands_v") != COMMANDS_VERSION:
             try:
@@ -365,7 +382,13 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
             log("새 글 상태를 저장소에 기록하지 못했습니다. 알림은 계속 전송합니다.")
 
         deliver(store, tg, owner_chat_id)
+    except RunTimeout:
+        log(f"실행 전체 시간 한도({hard_limit}초)에 도달해 중단합니다. 못 보낸 알림은 상태에 남아 다음 실행에서 이어집니다.")
+        ok = False
     finally:
+        if use_alarm:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
         store.save()
     return ok
 
@@ -380,15 +403,22 @@ def _hook_from_env():
         # 별도 프로세스 그룹으로 실행해, 시간 초과 시 git pull/push 같은 자식까지 함께 종료한다.
         # (직접 실행한 셸만 죽으면 남은 git이 작업 트리를 계속 바꿔, 이후 상태 읽기·저장과 충돌한다)
         proc = subprocess.Popen(argv, start_new_session=True)
-        try:
-            code = proc.wait(timeout=CHECKPOINT_TIMEOUT)
-        except subprocess.TimeoutExpired:
+
+        def kill_group() -> None:
             try:
                 os.killpg(proc.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             proc.wait()
+
+        try:
+            code = proc.wait(timeout=CHECKPOINT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            kill_group()
             raise RuntimeError(f"{argv[0]} 시간 초과({CHECKPOINT_TIMEOUT}초): 자식 프로세스까지 종료함") from None
+        except BaseException:  # 전체 시간 한도(RunTimeout)·Ctrl+C로 끊길 때도 git 자식 프로세스를 남기지 않는다
+            kill_group()
+            raise
         if code != 0:
             raise RuntimeError(f"{argv[0]} 종료 코드 {code}")
 
@@ -401,7 +431,7 @@ def main() -> int:
     if not token or not chat_id:
         log("TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID 환경 변수가 필요합니다.")
         return 2
-    ok = run(os.environ.get("DATA_DIR", "data"), token, chat_id, checkpoint=_hook_from_env())
+    ok = run(os.environ.get("DATA_DIR", "data"), token, chat_id, checkpoint=_hook_from_env(), hard_limit=RUN_HARD_LIMIT)
     return 0 if ok else 1
 
 
