@@ -26,7 +26,7 @@ from .telegram import Telegram, TelegramError
 
 COMMANDS_VERSION = 1  # commands.COMMANDS를 바꾸면 올려서 메뉴를 다시 등록
 MAX_PER_FEED = 10  # 한 번의 실행에서 피드 하나에 보내는 최대 글 수 (나머지는 다음 실행에서 이어서 보냄)
-MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피드당)
+MAX_PENDING = 100  # 전송하지 못해 쌓아 두는 글의 최대 개수 (피드당). 넘는 새 글은 버리지 않고 다음 실행으로 미룬다
 FAIL_WARN_AT = 12  # 연속 실패 횟수가 이 값이 되면 한 번 경고 (5분 주기 기준 약 1시간)
 SEND_INTERVAL = 0.4
 MAX_OUTBOX = 50  # 보내지 못해 쌓아 두는 명령 응답·경고의 최대 개수
@@ -232,20 +232,25 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
     else:
         new = [_queue_item(e) for e in reversed(parsed.entries) if e.id not in known]  # 오래된 글부터
 
-    # 관측한 글은 seen에 기록하고, 아직 알리지 못한 글은 내용째 pending에 보관한다.
+    # 대기열(pending)에는 보관 한도가 있다. 한도를 넘는 새 글을 대기열 앞쪽의 오래된 글을 잘라 내며 밀어 넣으면, 주소 변경 뒤의
+    # 중복 알림처럼 새로 쌓인 글이 먼저 대기하던 진짜 미전송 알림을 밀어낸다. 그래서 먼저 대기하던 글은 그대로 두고, 자리가 모자란
+    # 새 글(오래된 것부터 채움)은 대기열에도 넣지 않고 seen에도 기록하지 않는다. 다음 실행에서 자리가 나면(= 전송이 진행되면)
+    # 피드에 남아 있는 한 다시 새 글로 잡힌다.
+    room = max(0, MAX_PENDING - len(pending))
+    accepted, deferred = new[:room], new[room:]
+    deferred_ids = {d["id"] for d in deferred}
+    if deferred:
+        log(f"[{f['name']}] 대기열이 가득 차 새 글 {len(deferred)}건은 다음 실행으로 미룹니다 (대기 {len(pending)}건)")
+
+    # 관측한 글은 seen에 기록하고(미룬 글 제외), 아직 알리지 못한 글은 내용째 pending에 보관한다.
     # (이후 피드에서 그 글이 사라져도, 전송이 늦어져도 누락되지 않음)
-    merged = current_ids + [i for i in old if i not in set(current_ids)]
+    merged = [i for i in current_ids if i not in deferred_ids] + [i for i in old if i not in set(current_ids)]
     store.state["seen"][fid] = merged[: max(SEEN_LIMIT, len(current_ids))]
 
-    queue = pending + new
-    overflow = len(queue) - MAX_PENDING
-    if overflow > 0:  # 보관 한도를 넘긴 오래된 글은 버리되, 건수를 기록해 다음 요약에서 반드시 알린다.
-        store.state["dropped"][fid] = store.state["dropped"].get(fid, 0) + overflow
-        queue = queue[overflow:]
-        log(f"[{f['name']}] 대기열 한도 초과로 {overflow}건 보류 해제 (누적 {store.state['dropped'][fid]}건, 다음 요약에서 안내)")
+    queue = pending + accepted
     _persist_pending(store, fid, queue)
-    if new:
-        log(f"[{f['name']}] 새 글 {len(new)}건 (전송 대기 {len(queue)}건)")
+    if accepted:
+        log(f"[{f['name']}] 새 글 {len(accepted)}건 (전송 대기 {len(queue)}건)")
 
 
 def _host_of(url: str) -> str:
@@ -352,7 +357,8 @@ def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict, deadl
 
     오래된 글을 건너뛰고 최신 글만 보내는 방식은 쓰지 않는다. 주소 변경 뒤의 중복 알림처럼 새로 쌓인 글이 발송 자리를 채우면
     먼저 대기하던 진짜 미전송 알림이 영구히 사라지기 때문이다. 대신 쌓인 순서대로 나눠 보내 몇 번의 실행에 걸쳐 모두 전달한다.
-    (보관 한도 MAX_PENDING를 넘겨 이미 버려진 건수만 dropped로 남겨 안내한다.)
+    (dropped는 예전 방식이 대기열 한도로 버린 건수를 남긴 값이다. 지금은 한도를 넘는 새 글을 버리지 않고 다음 실행으로 미루므로
+    새로 늘지 않지만, 이미 기록된 값이 있으면 한 번 안내한다.)
     일시 오류로 중단되면 False (남은 글은 pending에 유지).
     """
     fid = str(f["id"])
@@ -363,7 +369,7 @@ def _deliver_feed(store: Store, tg: Telegram, owner_chat_id: str, f: dict, deadl
     dropped = store.state["dropped"].get(fid, 0)
     try:
         if dropped:
-            tg.send_message(owner_chat_id, f"'{f['name']}' 알림이 대기열 한도({MAX_PENDING}건)를 넘어 오래된 {dropped}건은 알리지 못했습니다.")
+            tg.send_message(owner_chat_id, f"'{f['name']}' 알림이 예전 대기열 한도를 넘어 오래된 {dropped}건은 알리지 못했습니다.")
             store.state["dropped"].pop(fid, None)
         for idx, item in enumerate(to_send):
             if deadline is not None and time.monotonic() >= deadline:

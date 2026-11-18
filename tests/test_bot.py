@@ -293,29 +293,28 @@ class RunTests(unittest.TestCase):
         self.assertNotIn("1", self.state()["pending"])
         self.assertNotIn("1", self.state()["dropped"])
 
-    def test_pending_overflow_is_counted_and_announced_not_silently_lost(self):
-        self.run_bot(FakeTG(), feed_of("0"))
+    def test_full_queue_defers_new_posts_instead_of_dropping_and_drains_over_runs(self):
+        """대기열이 가득 차면 새 글은 버리지도, 본 글로 기록하지도 않고 미룬다. 자리가 나면 순서대로 모두 전달된다."""
         with mock.patch("rssbot.main.MAX_PENDING", 5):
+            self.run_bot(FakeTG(), feed_of("0"))
             ids = [str(i) for i in range(12, 0, -1)] + ["0"]
             self.run_bot(FakeTG(fail_sends=99), feed_of(*ids))  # 신규 12건, 전부 전송 실패
             st = self.state()
-            self.assertEqual(len(st["pending"]["1"]), 5)
-            self.assertEqual(st["dropped"]["1"], 7)
+            self.assertEqual([p["id"] for p in st["pending"]["1"]], ["1", "2", "3", "4", "5"])  # 오래된 5건만 수용
+            for deferred in "6789":
+                self.assertNotIn(deferred, st["seen"]["1"])  # 미룬 글은 본 글로 기록하지 않음
+            self.assertFalse(st.get("dropped"))
 
-            more = [str(i) for i in range(15, 12, -1)] + ids
-            self.run_bot(FakeTG(fail_sends=99), feed_of(*more))  # 3건 더, 또 실패
-            st = self.state()
-            self.assertEqual(len(st["pending"]["1"]), 5)
-            self.assertEqual(st["dropped"]["1"], 10)
+            self.run_bot(FakeTG(fail_sends=99), feed_of(*ids))  # 또 실패해도 대기열은 그대로
+            self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["1", "2", "3", "4", "5"])
 
             tg = FakeTG()
-            self.run_bot(tg, feed_of(*more))  # 복구
-        texts = [t for _, t, _ in tg.sent]
-        self.assertIn("10건은 알리지 못했습니다", texts[0])  # 보관 한도로 버려진 건수 안내
-        self.assertEqual(len(texts), 6)  # 요약 1 + 대기열 5건
-        st = self.state()
-        self.assertNotIn("1", st["pending"])
-        self.assertNotIn("1", st["dropped"])
+            for _ in range(5):  # 복구: 전송이 진행되며 자리가 나는 대로 미룬 글이 다시 잡힘
+                self.run_bot(tg, feed_of(*ids))
+        titles = [t.split("title-")[1].split("<")[0] for _, t, is_html in tg.sent if is_html]
+        self.assertEqual(titles, [str(i) for i in range(1, 13)])  # 하나도 빠지지 않고 오래된 순
+        self.assertTrue(all("알리지 못했습니다" not in t for _, t, _ in tg.sent))
+        self.assertNotIn("1", self.state()["pending"])
 
     def test_non_telegram_error_during_send_loses_nothing(self):
         """TimeoutError처럼 TelegramError가 아닌 예외가 나도 미전송 글은 상태에 남고 실행은 계속된다."""
@@ -339,16 +338,36 @@ class RunTests(unittest.TestCase):
             self.run_bot(tg, feed_of("3", "2", "1"))
         self.assertEqual([p["id"] for p in self.state()["pending"]["1"]], ["2", "3"])
 
-    def test_summary_timeout_keeps_queue_and_overflow_count(self):
+    def test_send_timeout_with_full_queue_keeps_queue_and_defers_the_rest(self):
         self.run_bot(FakeTG(), feed_of("0"))
         ids = [str(i) for i in range(12, 0, -1)] + ["0"]
         tg = FakeTG()
         tg.send_message = mock.Mock(side_effect=TimeoutError("timed out"))
         with mock.patch("rssbot.main.MAX_PENDING", 5):
-            self.run_bot(tg, feed_of(*ids))  # 요약 전송이 타임아웃
+            self.run_bot(tg, feed_of(*ids))  # 전송이 타임아웃
         st = self.state()
-        self.assertEqual(len(st["pending"]["1"]), 5)
-        self.assertEqual(st["dropped"]["1"], 7)  # 잘려 나간 건수가 저장됨
+        self.assertEqual([p["id"] for p in st["pending"]["1"]], ["1", "2", "3", "4", "5"])
+        self.assertNotIn("12", st["seen"]["1"])  # 미룬 글은 다음 실행에서 다시 잡히도록 기록하지 않음
+        self.assertFalse(st.get("dropped"))
+
+    def test_duplicates_after_url_change_never_push_out_earlier_unsent_alerts_when_queue_is_full(self):
+        """대기열 보관 한도에 걸려도, 주소 변경 뒤 쌓인 중복 알림이 먼저 대기하던 미전송 알림을 잘라 내면 안 된다."""
+        with mock.patch("rssbot.main.MAX_PENDING", 5):
+            self.run_bot(FakeTG(), feed_of("1"))
+            self.run_bot(FakeTG(fail_sends=99), feed_of("4", "3", "2", "1"))  # 2, 3, 4번 글: 먼저 대기하던 미전송 알림
+            dupes = [f"n{i}" for i in range(6, 0, -1)]  # 주소 변경 뒤 다시 새 글로 잡힌 6건
+            new = feed_of(*dupes, "1")
+            tg = FakeTG(updates=[msg(5, "/edit 1 url https://mirror.example/rss")], fail_sends=99)
+            with mock.patch("rssbot.commands.fetch_feed", return_value=new), mock.patch("rssbot.main.fetch_feed", return_value=new):
+                main.run(self.tmp.name, "tok", OWNER, tg)
+            pending = [p["id"] for p in self.state()["pending"]["1"]]
+            self.assertEqual(pending, ["2", "3", "4", "n1", "n2"])  # 먼저 대기하던 글이 앞에 그대로, 자리가 남은 만큼만 추가
+            tg2 = FakeTG()
+            for _ in range(4):
+                self.run_bot(tg2, new)
+        titles = [t.split("title-")[1].split("<")[0] for _, t, is_html in tg2.sent if is_html]
+        self.assertEqual(titles, ["2", "3", "4"] + [f"n{i}" for i in range(1, 7)])  # 하나도 빠지지 않고 오래된 순
+        self.assertNotIn("1", self.state()["pending"])
 
     def test_one_broken_feed_does_not_block_others(self):
         feeds_path = os.path.join(self.tmp.name, "feeds.json")
