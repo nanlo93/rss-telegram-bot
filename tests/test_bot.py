@@ -450,6 +450,37 @@ class RunTests(unittest.TestCase):
         self.assertEqual(st["update_offset"], 0)  # 응답 몫이 찼으므로 새 명령은 보류
         self.assertEqual(len(st["outbox"]), main.MAX_OUTBOX - main.NOTICE_QUOTA + 3)
 
+    def test_failure_warning_is_not_lost_when_notice_quota_is_full_at_that_moment(self):
+        """12회째 실패에서 안내 몫이 차 있어도, 실패가 13, 14회로 늘어난다고 경고가 영영 안 나가면 안 된다."""
+        self.run_bot(FakeTG(), feed_of("1"))
+        sp = os.path.join(self.tmp.name, "state.json")
+        with open(sp) as f:
+            s = json.load(f)
+        s["outbox"] = [{"text": f"안내 {i}", "kind": "notice"} for i in range(main.NOTICE_QUOTA)]  # 안내 몫이 가득 참
+        s["fails"] = {"1": main.FAIL_WARN_AT - 1}  # 이번 실패가 12회째
+        with open(sp, "w") as f:
+            json.dump(s, f)
+
+        def run(tg, fetch_ok=False):
+            with mock.patch("rssbot.main.fetch_feed", return_value=feed_of("1")) if fetch_ok else \
+                 mock.patch("rssbot.main.fetch_feed", side_effect=FeedError("연결 실패")):
+                main.run(self.tmp.name, "tok", OWNER, tg)
+
+        run(FakeTG(fail_sends=9999))  # 전송 불통: 경고가 필요해졌지만 자리가 없음
+        st = self.state()
+        self.assertEqual(st["fail_warn"]["1"]["state"], "due")  # 잊지 않고 기록
+        self.assertEqual(len(st["outbox"]), main.NOTICE_QUOTA)  # 몫 밖으로 밀어 넣지 않음
+
+        tg = FakeTG()
+        for _ in range(3):  # 실패가 13, 14, 15회로 늘어도 (== 12 조건은 다시 성립하지 않음)
+            run(tg)
+        warns = [t for _, t, _ in tg.sent if "연속 확인하지 못했습니다" in t]
+        self.assertEqual(len(warns), 1)  # 몫이 비워진 뒤 경고가 정확히 한 번 나감
+        self.assertEqual(self.state()["fail_warn"]["1"]["state"], "sent")
+
+        run(tg, fetch_ok=True)  # 다시 확인되면 경고 상태를 지움
+        self.assertNotIn("1", self.state()["fail_warn"])
+
     def test_lost_record_is_cleaned_when_feed_is_removed(self):
         with tempfile.TemporaryDirectory() as d:
             store = Store(d)

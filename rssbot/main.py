@@ -201,10 +201,14 @@ def _collect_one(store: Store, f: dict, notices: list, fetched) -> None:
         fails = store.state["fails"].get(fid, 0) + 1
         store.state["fails"][fid] = fails
         log(f"[{f['name']}] 확인 실패 ({fails}회 연속): {msg}")
-        if fails == FAIL_WARN_AT:
-            notices.append(f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {commands.redact(msg)}")
+        if fails >= FAIL_WARN_AT and fid not in store.state["fail_warn"]:
+            # 경고를 바로 발송함에 넣지 않고 '보내야 한다'는 사실을 상태에 먼저 기록한다. 안내 몫이 차 있으면 새 안내가 버려지는데,
+            # 실패 횟수는 계속 늘어 '== FAIL_WARN_AT' 같은 한 번뿐인 조건은 다시 성립하지 않으므로 그러면 경고가 영구히 사라진다.
+            store.state["fail_warn"][fid] = {"state": "due", "text": (
+                f"'{f['name']}' 피드를 {fails}회 연속 확인하지 못했습니다.\n{f['url']}\n마지막 오류: {commands.redact(msg)}")}
         return
     store.state["fails"].pop(fid, None)
+    store.state["fail_warn"].pop(fid, None)  # 다시 확인되면 경고 상태를 지운다 (다음 실패 연속은 새로 경고)
 
     current_ids = [e.id for e in parsed.entries]
     old = store.state["seen"].get(fid)
@@ -355,6 +359,27 @@ def _enqueue_lost(store: Store) -> None:
             log(f"[{names[fid]}] 발송함의 안내 자리가 없어 밀려난 글 {count}건의 안내를 다음 실행으로 미룹니다")
             continue
         store.state["lost"].pop(fid, None)
+
+
+def _enqueue_fail_warnings(store: Store) -> None:
+    """기록해 둔 연속 실패 경고(due)를 발송함 안내 몫에 자리가 있을 때 적재하고 sent로 바꾼다. 자리가 없으면 다음 실행에서 다시 시도."""
+    names = {str(f["id"]): f["name"] for f in store.items}
+    for fid, warn in list(store.state["fail_warn"].items()):
+        if fid not in names:  # 구독이 삭제됨
+            store.state["fail_warn"].pop(fid, None)
+            continue
+        if warn.get("state") != "due":
+            continue
+        if not _enqueue_notice(store, warn["text"]):
+            log(f"[{names[fid]}] 발송함의 안내 자리가 없어 연속 실패 경고를 다음 실행으로 미룹니다")
+            continue
+        store.state["fail_warn"][fid] = {"state": "sent"}
+
+
+def _enqueue_durable_notices(store: Store) -> None:
+    """상태에 기록해 둔, 버려지면 안 되는 안내(누락 안내, 연속 실패 경고)를 안내 몫에 자리가 나는 대로 적재한다."""
+    _enqueue_lost(store)
+    _enqueue_fail_warnings(store)
 
 
 def collect_feeds(store: Store) -> list:
@@ -526,7 +551,7 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
 
         # 이미 기록해 둔 누락 안내는 새 명령 응답보다 먼저 발송함 자리를 얻어야 한다. 순서가 반대면 자리가 날 때마다 새 응답이
         # 먼저 채워, 명령이 계속 들어오는 동안 이 안내가 끝없이 뒤로 밀린다. (명령은 outbox 여유만큼만 가져오므로 안내가 우선권을 갖는다)
-        _enqueue_lost(store)
+        _enqueue_durable_notices(store)
         try:
             process_updates(store, tg, owner_chat_id)
         except Exception as e:  # 명령 수신 실패와 무관하게 새 글 확인은 계속 진행
@@ -539,7 +564,7 @@ def run(data_dir: str, token: str, owner_chat_id: str, tg: Telegram | None = Non
             return False
 
         _enqueue(store, collect_feeds(store), droppable=True)
-        _enqueue_lost(store)  # 부가 안내와 달리 버리지 않고, 자리가 날 때까지 상태에 보관
+        _enqueue_durable_notices(store)  # 부가 안내와 달리 버리지 않고, 자리가 날 때까지 상태에 보관
         if not _checkpoint(store, checkpoint):  # 새 글을 pending으로 확정한 뒤에야 전송 (write-ahead)
             # 알림 자체는 보낸다(중복은 감수). 대신 실행을 실패로 표시해 저장 실패를 눈에 띄게 한다.
             ok = False
