@@ -136,22 +136,24 @@ def _queue_item(e: Entry) -> dict:
     return {"id": e.id, "title": e.title, "link": e.link}
 
 
-_URL_ID_RE = re.compile(r"^(?:[a-z][a-z0-9+.\-]*:)?//([^/?#]*)(.*)$", re.IGNORECASE | re.DOTALL)
+_URL_ID_RE = re.compile(r"^(?:[a-z][a-z0-9+.\-]*:)?//([^/?#]*)([^?#]*)(.*)$", re.IGNORECASE | re.DOTALL)
 
 
 def _norm_id(raw: str) -> str:
-    """글 ID를 '같은 글인가' 비교용으로 정규화한다: 스킴, 앞의 www., 끝 슬래시, **호스트**의 대소문자 차이를 무시한다.
+    """글 ID를 '같은 글인가' 비교용으로 정규화한다. 절대 URL(스킴 있음 또는 //로 시작)에만 적용하고, 바꾸는 것은 딱 넷이다:
+    스킴, 앞의 www., **호스트**의 대소문자, **경로**의 끝 슬래시.
 
-    경로·쿼리·그 밖의 ID(tag:, urn:, yt:video: 등)는 대소문자를 구별한다. 서버와 ID 체계에 따라 경로의 대소문자는 서로
-    다른 글을 뜻할 수 있는데(짧은 링크, base64 계열 ID, 영상 ID), 통째로 소문자로 바꾸면 새 글이 이미 본 글로 오인돼
-    알림이 사라진다.
+    그 밖에는 손대지 않는다. 서로 다른 글의 ID가 합쳐지면 새 글이 이미 본 글로 오인돼 알림이 사라지기 때문이다.
+    - 경로·쿼리·fragment의 대소문자는 구별한다 (짧은 링크, base64 계열 ID, 영상 ID).
+    - 쿼리·fragment 값의 끝 슬래시는 그대로 둔다 ('?cat=/' 와 '?cat=' 은 다른 ID).
+    - tag:, urn:, yt:video: 같은 비 URL ID와 상대 경로는 전혀 바꾸지 않는다.
     """
     s = raw.strip()
     m = _URL_ID_RE.match(s)
     if not m:
-        return s.rstrip("/")
+        return s
     host = re.sub(r"^www\.", "", m.group(1).lower())  # 호스트 이름만 대소문자 무관 (RFC 3986)
-    return (host + m.group(2)).rstrip("/")
+    return host + m.group(2).rstrip("/") + m.group(3)
 
 
 def _persist_pending(store: Store, fid: str, items: list) -> None:

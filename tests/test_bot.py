@@ -948,6 +948,36 @@ class RunTests(unittest.TestCase):
         self.assertNotEqual(n("yt:video:AbCdEf"), n("yt:video:abcdef"))  # 비 URL ID도 구별
         self.assertNotEqual(n("tag:ex.com,2026:Post/1"), n("tag:ex.com,2026:post/1"))
 
+    def test_norm_id_never_merges_distinct_ids(self):
+        n = main._norm_id
+        # 쿼리·fragment 값의 끝 슬래시는 ID의 일부다
+        self.assertNotEqual(n("https://ex.com/f?cat=/"), n("https://ex.com/f?cat="))
+        self.assertNotEqual(n("https://ex.com/p#/"), n("https://ex.com/p#"))
+        self.assertNotEqual(n("https://ex.com/p?a=1/#x/"), n("https://ex.com/p?a=1#x"))
+        # 비 URL ID와 상대 경로는 전혀 정규화하지 않는다
+        self.assertNotEqual(n("tag:ex.com,2026:post/1/"), n("tag:ex.com,2026:post/1"))
+        self.assertNotEqual(n("/p/1/"), n("/p/1"))
+        self.assertNotEqual(n("urn:uuid:abc/"), n("urn:uuid:abc"))
+        # 합쳐도 되는 것: 같은 글의 주소 표기 차이 (스킴·www·호스트 대소문자·경로 끝 슬래시)
+        self.assertEqual(n("https://ex.com/p/"), n("http://www.EX.com/p"))
+        self.assertEqual(n("https://ex.com/"), n("https://ex.com"))
+        self.assertEqual(n("https://ex.com/p/?id=1"), n("https://ex.com/p?id=1"))
+
+    def test_url_change_notifies_new_posts_whose_ids_differ_only_in_query_slash_or_opaque_slash(self):
+        old = Feed("T", [Entry(id="https://ex.com/f?cat=", title="기존1", link="https://ex.com/a"),
+                         Entry(id="tag:ex.com,2026:post/1", title="기존2", link="https://ex.com/b")])
+        new = Feed("T", [Entry(id="https://ex.com/f?cat=/", title="새글-쿼리", link="https://ex.com/c"),
+                         Entry(id="tag:ex.com,2026:post/1/", title="새글-태그", link="https://ex.com/d"),
+                         Entry(id="https://ex.com/f?cat=", title="기존1", link="https://ex.com/a"),
+                         Entry(id="tag:ex.com,2026:post/1", title="기존2", link="https://ex.com/b")])
+        self.run_bot(FakeTG(), old)
+        tg = FakeTG(updates=[msg(5, "/edit 1 url https://mirror.example/rss")])
+        with mock.patch("rssbot.commands.fetch_feed", return_value=new), mock.patch("rssbot.main.fetch_feed", return_value=new):
+            main.run(self.tmp.name, "tok", OWNER, tg)
+        texts = sorted(t for _, t, is_html in tg.sent if is_html)
+        self.assertEqual(len(texts), 2)  # 서로 다른 ID의 새 글 둘 다 알림, 기존 글은 중복 없음
+        self.assertTrue(any("새글-쿼리" in t for t in texts) and any("새글-태그" in t for t in texts))
+
     def test_url_change_notifies_new_post_whose_id_differs_only_by_path_case(self):
         old = Feed("T", [Entry(id="https://ex.com/p/abc", title="소문자 글", link="https://ex.com/p/abc")])
         new = Feed("T", [Entry(id="https://ex.com/p/ABC", title="대문자 새 글", link="https://ex.com/p/ABC"),
