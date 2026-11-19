@@ -2,6 +2,23 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37452",
+      "https://news.hada.io/topic?id=37451",
+      "https://news.hada.io/topic?id=37448",
+      "https://news.hada.io/topic?id=37447",
+      "https://news.hada.io/topic?id=37446",
+      "https://news.hada.io/topic?id=37445",
+      "https://news.hada.io/topic?id=37442",
+      "https://news.hada.io/topic?id=37441",
+      "https://news.hada.io/topic?id=37440",
+      "https://news.hada.io/topic?id=37438",
+      "https://news.hada.io/topic?id=37437",
+      "https://news.hada.io/topic?id=37436",
+      "https://news.hada.io/topic?id=37435",
+      "https://news.hada.io/topic?id=37434",
+      "https://news.hada.io/topic?id=37433",
+      "https://news.hada.io/topic?id=37432",
+      "https://news.hada.io/topic?id=37431",
       "https://news.hada.io/topic?id=37430",
       "https://news.hada.io/topic?id=37429",
       "https://news.hada.io/topic?id=37426",
@@ -84,6 +101,91 @@
         "id": "https://news.hada.io/topic?id=37430",
         "title": "Redict 공식 지원 종료",
         "link": "https://news.hada.io/topic?id=37430"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37431",
+        "title": "Genie 4, Project Genie에서 이용 가능 - 실시간 세계 수정과 오디오 생성 지원",
+        "link": "https://news.hada.io/topic?id=37431"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37432",
+        "title": "Gemini 4 Neon - 복잡한 코딩과 분석에 추론 성능과 효율을 갖춘 AI 모델",
+        "link": "https://news.hada.io/topic?id=37432"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37433",
+        "title": "Google Gemini의 개인 비서 기능 ‘Tasks’, 이제 무료로 제공",
+        "link": "https://news.hada.io/topic?id=37433"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37434",
+        "title": "Tencent Hy4 Flash - 100만 토큰 컨텍스트를 지원하는 저비용 멀티모달 모델",
+        "link": "https://news.hada.io/topic?id=37434"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37435",
+        "title": "KVM: x86: INIT 에뮬레이션 시 MMU 컨텍스트를 무조건 초기화하도록 수정(CVE-2026-99312)",
+        "link": "https://news.hada.io/topic?id=37435"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37436",
+        "title": "Claude는 대규모 단백질 서열로 학습됐다",
+        "link": "https://news.hada.io/topic?id=37436"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37437",
+        "title": "Codeberg 도메인이 계정에서 갑자기 사라져 사이트 접속 불가",
+        "link": "https://news.hada.io/topic?id=37437"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37438",
+        "title": "nginx2root - nginx 원격 코드 실행 취약점 5개와 Linux 커널 권한 상승 취약점",
+        "link": "https://news.hada.io/topic?id=37438"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37440",
+        "title": "Reticle - AI 코딩 에이전트가 웹/데스크톱 앱을 직접 조작해 검증하는 도구",
+        "link": "https://news.hada.io/topic?id=37440"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37441",
+        "title": "OpenAI 모델로 칩 설계 발전시키기",
+        "link": "https://news.hada.io/topic?id=37441"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37442",
+        "title": "Java4Shell: Java 17의 인증 전 원격 코드 실행 취약점으로 서버 위험 노출(CVE-2026-114938)",
+        "link": "https://news.hada.io/topic?id=37442"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37445",
+        "title": "NoisyTCP CVE-2026-99288: Linux 관리자가 알아야 할 사항",
+        "link": "https://news.hada.io/topic?id=37445"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37446",
+        "title": "우리에겐 진심으로 신경 쓰는 똑똑한 사람들이 필요하다",
+        "link": "https://news.hada.io/topic?id=37446"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37447",
+        "title": "Show HN: ExitPath - Slack, Notion, Microsoft 365에서 벗어나는 오픈소스 대안",
+        "link": "https://news.hada.io/topic?id=37447"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37448",
+        "title": "Show GN: AirStats - 24시간 기록을 보여주는 가벼운 오픈소스 맥 메뉴 막대 시스템 모니터",
+        "link": "https://news.hada.io/topic?id=37448"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37451",
+        "title": "Ask GN: 일별 집계 데이터가 나중에 바뀔 때, 자동화 리포트는 어떻게 관리하시나요?",
+        "link": "https://news.hada.io/topic?id=37451"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37452",
+        "title": "PHP, Critical 등급 취약점 수정을 포함한 새로운 보안패치 예정(2026.11.19.)",
+        "link": "https://news.hada.io/topic?id=37452"
       }
     ]
   },
