@@ -98,56 +98,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37448",
-        "title": "Show GN: AirStats - 24시간 기록을 보여주는 가벼운 오픈소스 맥 메뉴 막대 시스템 모니터",
-        "link": "https://news.hada.io/topic?id=37448"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37451",
-        "title": "Ask GN: 일별 집계 데이터가 나중에 바뀔 때, 자동화 리포트는 어떻게 관리하시나요?",
-        "link": "https://news.hada.io/topic?id=37451"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37452",
-        "title": "PHP, Critical 등급 취약점 수정을 포함한 새로운 보안패치 예정(2026.11.19.)",
-        "link": "https://news.hada.io/topic?id=37452"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37453",
-        "title": "Show HN: Voyager 1을 메모리 칩 하나까지 분해해 보기",
-        "link": "https://news.hada.io/topic?id=37453"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37454",
-        "title": "SK텔레콤 누구 스마트홈, 2028년 말 전체 서비스 종료",
-        "link": "https://news.hada.io/topic?id=37454"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37456",
-        "title": "Gemini 4 Neon, Opus 5.5의 경쟁자가 될 것으로 보임",
-        "link": "https://news.hada.io/topic?id=37456"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37458",
-        "title": "Ruby Regexp와 String 대소문자 변환에서 다수의 취약점 발견",
-        "link": "https://news.hada.io/topic?id=37458"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37459",
-        "title": "DaisyRose-27B - 장시간 에이전트 작업에 강화학습을 적용한 Qwen3.8-27B 기반 모델",
-        "link": "https://news.hada.io/topic?id=37459"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37461",
-        "title": "Show GN: 바로속보 - 같은 속보는 알림을 한 번만 보내는 뉴스 앱",
-        "link": "https://news.hada.io/topic?id=37461"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37463",
-        "title": "Show GN: 크리스마스 Claude Code 플러그인 SantaClaude",
-        "link": "https://news.hada.io/topic?id=37463"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37465",
         "title": "Anthropic, 기업공개 공모가 확정",
         "link": "https://news.hada.io/topic?id=37465"
