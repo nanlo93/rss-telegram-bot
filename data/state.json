@@ -73,56 +73,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37420",
-        "title": "폴란드, 칼리닌그라드 접경에서 위장 공작을 저지했다고 밝혀",
-        "link": "https://news.hada.io/topic?id=37420"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37421",
-        "title": "에너지 음료, 심정지 보고 빈도 11배와 연관",
-        "link": "https://news.hada.io/topic?id=37421"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37425",
-        "title": "캠브리지 사전, ‘human’을 2026년 올해의 단어로 선정",
-        "link": "https://news.hada.io/topic?id=37425"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37426",
-        "title": "스코틀랜드식 HTTP 상태 코드",
-        "link": "https://news.hada.io/topic?id=37426"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37429",
-        "title": "AI 에이전트, 감사 실험에서 KPMG 회계사보다 더 나은 질문 던져",
-        "link": "https://news.hada.io/topic?id=37429"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37430",
-        "title": "Redict 공식 지원 종료",
-        "link": "https://news.hada.io/topic?id=37430"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37431",
-        "title": "Genie 4, Project Genie에서 이용 가능 - 실시간 세계 수정과 오디오 생성 지원",
-        "link": "https://news.hada.io/topic?id=37431"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37432",
-        "title": "Gemini 4 Neon - 복잡한 코딩과 분석에 추론 성능과 효율을 갖춘 AI 모델",
-        "link": "https://news.hada.io/topic?id=37432"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37433",
-        "title": "Google Gemini의 개인 비서 기능 ‘Tasks’, 이제 무료로 제공",
-        "link": "https://news.hada.io/topic?id=37433"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37434",
-        "title": "Tencent Hy4 Flash - 100만 토큰 컨텍스트를 지원하는 저비용 멀티모달 모델",
-        "link": "https://news.hada.io/topic?id=37434"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37435",
         "title": "KVM: x86: INIT 에뮬레이션 시 MMU 컨텍스트를 무조건 초기화하도록 수정(CVE-2026-99312)",
         "link": "https://news.hada.io/topic?id=37435"
