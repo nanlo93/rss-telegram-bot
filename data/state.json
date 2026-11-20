@@ -133,56 +133,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37489",
-        "title": "RAM을 사지 말고 압축하자",
-        "link": "https://news.hada.io/topic?id=37489"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37490",
-        "title": "브라우저에서 A4 한 장으로 접는 8페이지 소책자 만들기",
-        "link": "https://news.hada.io/topic?id=37490"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37491",
-        "title": "Pete Warden이 말하는 로컬 AI, 개방형 모델, 음성 인터페이스와 하드웨어의 미래",
-        "link": "https://news.hada.io/topic?id=37491"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37492",
-        "title": "브라우저에서 실행하는 Unreal Tournament 2004",
-        "link": "https://news.hada.io/topic?id=37492"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37493",
-        "title": "x86 CPU: 4004에서 486까지",
-        "link": "https://news.hada.io/topic?id=37493"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37494",
-        "title": "이해 가능성을 위한 설계",
-        "link": "https://news.hada.io/topic?id=37494"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37496",
-        "title": "Kiri - 무료 ngrok 대안을 내장한 경량 Docker Desktop 대체재",
-        "link": "https://news.hada.io/topic?id=37496"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37497",
-        "title": "Show HN: Cornhole News - Hacker News에서 영감을 받은 미국 중서부 뉴스 사이트",
-        "link": "https://news.hada.io/topic?id=37497"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37498",
-        "title": "98% 슬롯머신: 유료 광고는 어떻게 착취적 세금이 되었나",
-        "link": "https://news.hada.io/topic?id=37498"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37499",
-        "title": "Show GN: OneHandy - 회원가입 없이 브라우저에서 쓰는 무료 웹 도구 123종 (계산기·변환기·텍스트·이미지)",
-        "link": "https://news.hada.io/topic?id=37499"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37502",
         "title": "Show GN: 법원 경매 예상 낙찰가 - 다음 매각기일 물건을 말로 찾고 지도로 보는 무료 사이트",
         "link": "https://news.hada.io/topic?id=37502"
