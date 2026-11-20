@@ -111,56 +111,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37465",
-        "title": "Anthropic, 기업공개 공모가 확정",
-        "link": "https://news.hada.io/topic?id=37465"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37466",
-        "title": "LLM을 활용한 리버스 엔지니어링",
-        "link": "https://news.hada.io/topic?id=37466"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37467",
-        "title": "Java4Shell은 Java를 사용해야 할 이유다",
-        "link": "https://news.hada.io/topic?id=37467"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37470",
-        "title": "VM 한 대에서 웹 서버 1,500만 개 실행하기: smoltcp, DPDK, AF_XDP",
-        "link": "https://news.hada.io/topic?id=37470"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37471",
-        "title": "Ruby2ßhell: 기본 구성 Rails에서 인증 없이 가능한 원격 코드 실행",
-        "link": "https://news.hada.io/topic?id=37471"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37472",
-        "title": "Show GN: Agent World - 코딩 에이전트들이 사는 3D 마을",
-        "link": "https://news.hada.io/topic?id=37472"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37473",
-        "title": "유럽연합 집행위원회가 직원 4만 명 이상에게 Matrix를 도입한 방법",
-        "link": "https://news.hada.io/topic?id=37473"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37474",
-        "title": "SSD 가격, 2027년 하반기부터 하락할 전망",
-        "link": "https://news.hada.io/topic?id=37474"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37476",
-        "title": "PHP 8.6의 새로운 기능",
-        "link": "https://news.hada.io/topic?id=37476"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37477",
-        "title": "F-22 차세대 마이크로 데이터 전송 카트리지(mDTC)",
-        "link": "https://news.hada.io/topic?id=37477"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37478",
         "title": "SQLite 기반 분산 고성능 블롭 스토리지",
         "link": "https://news.hada.io/topic?id=37478"
