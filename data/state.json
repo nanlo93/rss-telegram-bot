@@ -2,6 +2,21 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37548",
+      "https://news.hada.io/topic?id=37547",
+      "https://news.hada.io/topic?id=37546",
+      "https://news.hada.io/topic?id=37545",
+      "https://news.hada.io/topic?id=37544",
+      "https://news.hada.io/topic?id=37543",
+      "https://news.hada.io/topic?id=37542",
+      "https://news.hada.io/topic?id=37541",
+      "https://news.hada.io/topic?id=37540",
+      "https://news.hada.io/topic?id=37539",
+      "https://news.hada.io/topic?id=37537",
+      "https://news.hada.io/topic?id=37536",
+      "https://news.hada.io/topic?id=37535",
+      "https://news.hada.io/topic?id=37534",
+      "https://news.hada.io/topic?id=37533",
       "https://news.hada.io/topic?id=37531",
       "https://news.hada.io/topic?id=37530",
       "https://news.hada.io/topic?id=37529",
@@ -246,6 +261,81 @@
         "id": "https://news.hada.io/topic?id=37531",
         "title": "Jujutsu 입문: Git 사용자에게 익숙하면서도 다른 버전 관리 방식",
         "link": "https://news.hada.io/topic?id=37531"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37533",
+        "title": "다시는 Framework 하드웨어를 사지 않겠다",
+        "link": "https://news.hada.io/topic?id=37533"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37534",
+        "title": "코드 작성을 멈추면 코드 리뷰 실력도 떨어진다",
+        "link": "https://news.hada.io/topic?id=37534"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37535",
+        "title": "Synology 보안 권고: DSM과 BeeStation OS의 치명적 취약점",
+        "link": "https://news.hada.io/topic?id=37535"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37536",
+        "title": "Postgres 19 REPACK: 확장 없이 테이블의 불필요한 공간 회수하기",
+        "link": "https://news.hada.io/topic?id=37536"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37537",
+        "title": "IEA, 건물 냉방 에너지 수요가 난방을 추월하고 있음",
+        "link": "https://news.hada.io/topic?id=37537"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37539",
+        "title": "iOS에 여전히 WebKit 이외의 엔진을 쓰는 브라우저가 없는 이유",
+        "link": "https://news.hada.io/topic?id=37539"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37540",
+        "title": "언어 모델은 자신의 가중치를 직접 다시 쓸 수 있다",
+        "link": "https://news.hada.io/topic?id=37540"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37541",
+        "title": "긴급 공지: Alessandro Masullo, 일반화 리만 가설(GRH) 증명안 공개",
+        "link": "https://news.hada.io/topic?id=37541"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37542",
+        "title": "Anthropic의 기록적인 IPO도 AI주 매도세 막지 못해, 세계 증시 급락",
+        "link": "https://news.hada.io/topic?id=37542"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37543",
+        "title": "Navier–Stokes 방정식의 유한 시간 발산",
+        "link": "https://news.hada.io/topic?id=37543"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37544",
+        "title": "Oxygene의 제작 과정",
+        "link": "https://news.hada.io/topic?id=37544"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37545",
+        "title": "Inkling 2 Mini - 노트북에서 실행하는 반복형 트랜스포머 모델",
+        "link": "https://news.hada.io/topic?id=37545"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37546",
+        "title": "외력이 없는 Euler와 Navier-Stokes 방정식의 특이점과 일반화 리만 가설",
+        "link": "https://news.hada.io/topic?id=37546"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37547",
+        "title": "Google 직원들, AI를 원하지 않는 학교에 불이익 주지 말라고 회사에 요구",
+        "link": "https://news.hada.io/topic?id=37547"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37548",
+        "title": "우리는 개발자들에게 알리지도 않고 아키텍트로 승진시켰다",
+        "link": "https://news.hada.io/topic?id=37548"
       }
     ]
   },
