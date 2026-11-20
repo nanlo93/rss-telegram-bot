@@ -120,56 +120,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37478",
-        "title": "SQLite 기반 분산 고성능 블롭 스토리지",
-        "link": "https://news.hada.io/topic?id=37478"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37479",
-        "title": "생존과 사회 재건에 필요한 모든 것",
-        "link": "https://news.hada.io/topic?id=37479"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37480",
-        "title": "누군가 2026년 9월에 java4shell 버그를 보고함",
-        "link": "https://news.hada.io/topic?id=37480"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37481",
-        "title": "PHP 치명적 취약점 보안 릴리스 예정 안내(2026년 11월 18일)",
-        "link": "https://news.hada.io/topic?id=37481"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37482",
-        "title": "Anthropic, Nasdaq 상장 첫날 시가총액 약 2,600조원 도달",
-        "link": "https://news.hada.io/topic?id=37482"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37483",
-        "title": "영국 정부, Apple에 비밀 암호화 명령을 내린 사실 인정해야",
-        "link": "https://news.hada.io/topic?id=37483"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37484",
-        "title": "너희 AI 안전장치 따위 엿 먹어라",
-        "link": "https://news.hada.io/topic?id=37484"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37485",
-        "title": "Nintendo, GitHub에서 Picofly 펌웨어 삭제 조치 [영상]",
-        "link": "https://news.hada.io/topic?id=37485"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37487",
-        "title": "Claude, 블랙홀 물리학의 미해결 문제 두 가지 해결",
-        "link": "https://news.hada.io/topic?id=37487"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37488",
-        "title": "바이러스 주사로 환자 3명의 췌장암 진행 멈춰",
-        "link": "https://news.hada.io/topic?id=37488"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37489",
         "title": "RAM을 사지 말고 압축하자",
         "link": "https://news.hada.io/topic?id=37489"
