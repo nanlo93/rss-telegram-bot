@@ -158,56 +158,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37516",
-        "title": "뮤텍스 포이즈닝은 모두에게 적합하지 않다",
-        "link": "https://news.hada.io/topic?id=37516"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37517",
-        "title": "PostgreSQL 19 주요 변경 사항과 업그레이드 주의점",
-        "link": "https://news.hada.io/topic?id=37517"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37518",
-        "title": "Show GN: night-port - 고전 DOS 게임 어쩐지 저녁 Native/WASM/Pocket 포트",
-        "link": "https://news.hada.io/topic?id=37518"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37519",
-        "title": "“이건 직접 쓴 글이라는 게 보이네요”",
-        "link": "https://news.hada.io/topic?id=37519"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37521",
-        "title": "FFmpeg 9.1 'Gauss' - 멀티미디어 프로젝트의 핵심 구성 요소인 FFmpeg의 최신 안정 릴리스",
-        "link": "https://news.hada.io/topic?id=37521"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37522",
-        "title": "Show GN: rdocs2md – Rust로 만든 경량 문서→Markdown 변환 CLI/MCP (HWP/PDF/Office 지원)",
-        "link": "https://news.hada.io/topic?id=37522"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37524",
-        "title": "Frostbite: AI가 발견하고 설계하고 검증한 새로운 CPU 아키텍처",
-        "link": "https://news.hada.io/topic?id=37524"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37525",
-        "title": "Carnival Cruises의 황산화물 배출량, 유럽 전체 자동차의 10배에 달함(2019)",
-        "link": "https://news.hada.io/topic?id=37525"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37526",
-        "title": "Show GN: 잘하나 – 지방의회 회의록을 사안별로 이어 보여 주는 서비스",
-        "link": "https://news.hada.io/topic?id=37526"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37527",
-        "title": "쉽게 설명할 수 없다면 이해한 것이 아니다 (2017)",
-        "link": "https://news.hada.io/topic?id=37527"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37529",
         "title": "Anthropic 수학자, Claude와 리만 가설 및 일반화 리만 가설을 증명했다고 발표 [pdf]",
         "link": "https://news.hada.io/topic?id=37529"
