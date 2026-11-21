@@ -2,6 +2,11 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37598",
+      "https://news.hada.io/topic?id=37597",
+      "https://news.hada.io/topic?id=37595",
+      "https://news.hada.io/topic?id=37594",
+      "https://news.hada.io/topic?id=37593",
       "https://news.hada.io/topic?id=37592",
       "https://news.hada.io/topic?id=37591",
       "https://news.hada.io/topic?id=37590",
@@ -352,6 +357,31 @@
         "id": "https://news.hada.io/topic?id=37592",
         "title": "GIMP에 UI 테스트 도입",
         "link": "https://news.hada.io/topic?id=37592"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37593",
+        "title": "브라이언 메이, Hera의 소행성 영상에 입체감을 더하다",
+        "link": "https://news.hada.io/topic?id=37593"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37594",
+        "title": "binder.c 제거, Android Binder의 C 구현을 Rust로 대체",
+        "link": "https://news.hada.io/topic?id=37594"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37595",
+        "title": "5.4 GB 메모리의 Inkling-2-Mini",
+        "link": "https://news.hada.io/topic?id=37595"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37597",
+        "title": "FBI, 범죄정보 데이터베이스 해킹 의심 사건 조사 중인 것으로 알려져",
+        "link": "https://news.hada.io/topic?id=37597"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37598",
+        "title": "췌장암 치료 알약, ‘수십 년 만의 최대 돌파구’로 평가받음",
+        "link": "https://news.hada.io/topic?id=37598"
       }
     ]
   },
