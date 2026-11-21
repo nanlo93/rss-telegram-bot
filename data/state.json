@@ -184,56 +184,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37541",
-        "title": "긴급 공지: Alessandro Masullo, 일반화 리만 가설(GRH) 증명안 공개",
-        "link": "https://news.hada.io/topic?id=37541"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37542",
-        "title": "Anthropic의 기록적인 IPO도 AI주 매도세 막지 못해, 세계 증시 급락",
-        "link": "https://news.hada.io/topic?id=37542"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37543",
-        "title": "Navier–Stokes 방정식의 유한 시간 발산",
-        "link": "https://news.hada.io/topic?id=37543"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37544",
-        "title": "Oxygene의 제작 과정",
-        "link": "https://news.hada.io/topic?id=37544"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37545",
-        "title": "Inkling 2 Mini - 노트북에서 실행하는 반복형 트랜스포머 모델",
-        "link": "https://news.hada.io/topic?id=37545"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37546",
-        "title": "외력이 없는 Euler와 Navier-Stokes 방정식의 특이점과 일반화 리만 가설",
-        "link": "https://news.hada.io/topic?id=37546"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37547",
-        "title": "Google 직원들, AI를 원하지 않는 학교에 불이익 주지 말라고 회사에 요구",
-        "link": "https://news.hada.io/topic?id=37547"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37548",
-        "title": "우리는 개발자들에게 알리지도 않고 아키텍트로 승진시켰다",
-        "link": "https://news.hada.io/topic?id=37548"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37549",
-        "title": "jj-musubi 공개: Jujutsu 저장소의 실시간 동기화",
-        "link": "https://news.hada.io/topic?id=37549"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37550",
-        "title": "항상 작동하는 에이전트 구축하기",
-        "link": "https://news.hada.io/topic?id=37550"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37551",
         "title": "SignuDoc - 내 계정에 배포해 운영하는 오픈소스 전자서명 앱",
         "link": "https://news.hada.io/topic?id=37551"
