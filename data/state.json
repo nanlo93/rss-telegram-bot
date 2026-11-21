@@ -2,6 +2,21 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37592",
+      "https://news.hada.io/topic?id=37591",
+      "https://news.hada.io/topic?id=37590",
+      "https://news.hada.io/topic?id=37589",
+      "https://news.hada.io/topic?id=37588",
+      "https://news.hada.io/topic?id=37586",
+      "https://news.hada.io/topic?id=37585",
+      "https://news.hada.io/topic?id=37584",
+      "https://news.hada.io/topic?id=37583",
+      "https://news.hada.io/topic?id=37582",
+      "https://news.hada.io/topic?id=37581",
+      "https://news.hada.io/topic?id=37580",
+      "https://news.hada.io/topic?id=37578",
+      "https://news.hada.io/topic?id=37577",
+      "https://news.hada.io/topic?id=37575",
       "https://news.hada.io/topic?id=37574",
       "https://news.hada.io/topic?id=37571",
       "https://news.hada.io/topic?id=37569",
@@ -312,6 +327,81 @@
         "id": "https://news.hada.io/topic?id=37574",
         "title": "방문한 링크는 보라색",
         "link": "https://news.hada.io/topic?id=37574"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37575",
+        "title": "OpenAI, 내부 연구 모델이 DNS 설정 오류로 인터넷에 접근해 최상위 모델 학습을 11일간 중단",
+        "link": "https://news.hada.io/topic?id=37575"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37577",
+        "title": "새 도메인으로 살펴보는 사람들이 만들고 있는 제품들",
+        "link": "https://news.hada.io/topic?id=37577"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37578",
+        "title": "Vint Cerf가 말하는 TCP/IP를 특허로 등록하지 않은 이유",
+        "link": "https://news.hada.io/topic?id=37578"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37580",
+        "title": "Winedroid - Android 없이 Android 앱 실행하기, WASM 데모",
+        "link": "https://news.hada.io/topic?id=37580"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37581",
+        "title": "추론 칩을 바이브 코딩하기",
+        "link": "https://news.hada.io/topic?id=37581"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37582",
+        "title": "Show GN: BerthNTFS – 커널 확장 없이 맥에서 NTFS 디스크에 쓰기 (FSKit + Rust)",
+        "link": "https://news.hada.io/topic?id=37582"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37583",
+        "title": "차고 문 알림에 끼어든 스팸",
+        "link": "https://news.hada.io/topic?id=37583"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37584",
+        "title": "내 모니터가 다운로드 속도를 75% 떨어뜨리고 있었다",
+        "link": "https://news.hada.io/topic?id=37584"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37585",
+        "title": "데릭 로: 아지드화 납 더미 폭파",
+        "link": "https://news.hada.io/topic?id=37585"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37586",
+        "title": "리만 가설의 Lean 검증, Lean과 Mathlib 커뮤니티 공동 성명",
+        "link": "https://news.hada.io/topic?id=37586"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37588",
+        "title": "Clojure는 프로그래밍을 생각하는 방식에 영향을 준다 (2017)",
+        "link": "https://news.hada.io/topic?id=37588"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37589",
+        "title": "Show GN: AriadneNSD - 알고리즘을 NS 차트로 그리는 구조 편집기",
+        "link": "https://news.hada.io/topic?id=37589"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37590",
+        "title": "GnuPG의 원격 코드 실행(RCE) 취약점",
+        "link": "https://news.hada.io/topic?id=37590"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37591",
+        "title": "그럼에도 지구는 돈다",
+        "link": "https://news.hada.io/topic?id=37591"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37592",
+        "title": "GIMP에 UI 테스트 도입",
+        "link": "https://news.hada.io/topic?id=37592"
       }
     ]
   },
