@@ -169,56 +169,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37529",
-        "title": "Anthropic 수학자, Claude와 리만 가설 및 일반화 리만 가설을 증명했다고 발표 [pdf]",
-        "link": "https://news.hada.io/topic?id=37529"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37530",
-        "title": "Signal은 사용자의 프라이버시 보호에 진지함",
-        "link": "https://news.hada.io/topic?id=37530"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37531",
-        "title": "Jujutsu 입문: Git 사용자에게 익숙하면서도 다른 버전 관리 방식",
-        "link": "https://news.hada.io/topic?id=37531"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37533",
-        "title": "다시는 Framework 하드웨어를 사지 않겠다",
-        "link": "https://news.hada.io/topic?id=37533"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37534",
-        "title": "코드 작성을 멈추면 코드 리뷰 실력도 떨어진다",
-        "link": "https://news.hada.io/topic?id=37534"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37535",
-        "title": "Synology 보안 권고: DSM과 BeeStation OS의 치명적 취약점",
-        "link": "https://news.hada.io/topic?id=37535"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37536",
-        "title": "Postgres 19 REPACK: 확장 없이 테이블의 불필요한 공간 회수하기",
-        "link": "https://news.hada.io/topic?id=37536"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37537",
-        "title": "IEA, 건물 냉방 에너지 수요가 난방을 추월하고 있음",
-        "link": "https://news.hada.io/topic?id=37537"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37539",
-        "title": "iOS에 여전히 WebKit 이외의 엔진을 쓰는 브라우저가 없는 이유",
-        "link": "https://news.hada.io/topic?id=37539"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37540",
-        "title": "언어 모델은 자신의 가중치를 직접 다시 쓸 수 있다",
-        "link": "https://news.hada.io/topic?id=37540"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37541",
         "title": "긴급 공지: Alessandro Masullo, 일반화 리만 가설(GRH) 증명안 공개",
         "link": "https://news.hada.io/topic?id=37541"
