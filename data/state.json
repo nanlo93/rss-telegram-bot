@@ -189,56 +189,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37551",
-        "title": "SignuDoc - 내 계정에 배포해 운영하는 오픈소스 전자서명 앱",
-        "link": "https://news.hada.io/topic?id=37551"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37552",
-        "title": "초대형 Git 저장소의 개발 속도 높이기",
-        "link": "https://news.hada.io/topic?id=37552"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37553",
-        "title": "Nvidia 회계 처리, SEC가 조사 중이라고 소식통 전해",
-        "link": "https://news.hada.io/topic?id=37553"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37554",
-        "title": "‘확률적 앵무새’가 리만 가설을 증명한 모양이다",
-        "link": "https://news.hada.io/topic?id=37554"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37555",
-        "title": "Cloudflare가 Raft 대신 QuePaxa를 선택한 이유",
-        "link": "https://news.hada.io/topic?id=37555"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37556",
-        "title": "Codex로 일하는 새로운 방식 [영상]",
-        "link": "https://news.hada.io/topic?id=37556"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37557",
-        "title": "Anthropic, IPO 직후 주가 급락…Nasdaq은 2026년 상승분 반납",
-        "link": "https://news.hada.io/topic?id=37557"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37558",
-        "title": "AGI 다음에는 무엇이 올까?",
-        "link": "https://news.hada.io/topic?id=37558"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37559",
-        "title": "Re: Riemann - 리만 가설 증명 발표와 AI 앞에서 인간의 주체성",
-        "link": "https://news.hada.io/topic?id=37559"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37560",
-        "title": "NINLIVE: Nine Inch Nails 라이브 아카이브",
-        "link": "https://news.hada.io/topic?id=37560"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37561",
         "title": "Show GN: 업종별로 눌러 볼 수 있는 가상 데모 사이트 20종을 AI로 만든 과정",
         "link": "https://news.hada.io/topic?id=37561"
