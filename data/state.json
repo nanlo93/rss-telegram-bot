@@ -2,6 +2,11 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37607",
+      "https://news.hada.io/topic?id=37604",
+      "https://news.hada.io/topic?id=37603",
+      "https://news.hada.io/topic?id=37602",
+      "https://news.hada.io/topic?id=37600",
       "https://news.hada.io/topic?id=37598",
       "https://news.hada.io/topic?id=37597",
       "https://news.hada.io/topic?id=37595",
@@ -332,6 +337,31 @@
         "id": "https://news.hada.io/topic?id=37598",
         "title": "췌장암 치료 알약, ‘수십 년 만의 최대 돌파구’로 평가받음",
         "link": "https://news.hada.io/topic?id=37598"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37600",
+        "title": "UI SDK - AI 에이전트가 UI의 기본 동작을 조합해 컴포넌트를 만드는 라이브러리",
+        "link": "https://news.hada.io/topic?id=37600"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37602",
+        "title": "Astra 6.2와 Sol 6.2, SimpleBench에서 부진",
+        "link": "https://news.hada.io/topic?id=37602"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37603",
+        "title": "마음으로 몸을 이끌어, 몸이 나를 이끌게 하기",
+        "link": "https://news.hada.io/topic?id=37603"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37604",
+        "title": "ClawDOS - DOS용 AI 코딩 에이전트",
+        "link": "https://news.hada.io/topic?id=37604"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37607",
+        "title": "내 미술 작품 웹사이트의 기술 아키텍처가 꽤 마음에 든다",
+        "link": "https://news.hada.io/topic?id=37607"
       }
     ]
   },
