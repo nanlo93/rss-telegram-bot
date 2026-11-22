@@ -194,56 +194,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37561",
-        "title": "Show GN: 업종별로 눌러 볼 수 있는 가상 데모 사이트 20종을 AI로 만든 과정",
-        "link": "https://news.hada.io/topic?id=37561"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37563",
-        "title": "Slopstrap - 사이트를 급하게 바이브 코딩한 것처럼 보이게 만들기",
-        "link": "https://news.hada.io/topic?id=37563"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37564",
-        "title": "DreamCoder: Mastering Emacs 저자가 만든 코딩 하네스와 IDE",
-        "link": "https://news.hada.io/topic?id=37564"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37566",
-        "title": "Vim Classic 8.3.1 출시, Python 2 지원 제거 및 Vim 패치 반영",
-        "link": "https://news.hada.io/topic?id=37566"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37567",
-        "title": "Backblaze 개인정보 수집 고지 및 개인정보 처리방침",
-        "link": "https://news.hada.io/topic?id=37567"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37568",
-        "title": "Show GN: codemap-search - 코딩 에이전트용 단일 바이너리 Rust 코드 탐색 MCP 서버",
-        "link": "https://news.hada.io/topic?id=37568"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37569",
-        "title": "Show GN: Claude로 만든 디스코드 개인 비서 — 결제 문자 자동 가계부까지 (MIT, 무료 서버로 운영)",
-        "link": "https://news.hada.io/topic?id=37569"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37571",
-        "title": "Ask HN: 미국에서 경력 15년인데 2년째 실업 상태입니다. 어떻게 해야 할까요?",
-        "link": "https://news.hada.io/topic?id=37571"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37574",
-        "title": "방문한 링크는 보라색",
-        "link": "https://news.hada.io/topic?id=37574"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37575",
-        "title": "OpenAI, 내부 연구 모델이 DNS 설정 오류로 인터넷에 접근해 최상위 모델 학습을 11일간 중단",
-        "link": "https://news.hada.io/topic?id=37575"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37577",
         "title": "새 도메인으로 살펴보는 사람들이 만들고 있는 제품들",
         "link": "https://news.hada.io/topic?id=37577"
