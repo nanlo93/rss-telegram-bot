@@ -2,6 +2,26 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37656",
+      "https://news.hada.io/topic?id=37655",
+      "https://news.hada.io/topic?id=37654",
+      "https://news.hada.io/topic?id=37653",
+      "https://news.hada.io/topic?id=37652",
+      "https://news.hada.io/topic?id=37651",
+      "https://news.hada.io/topic?id=37650",
+      "https://news.hada.io/topic?id=37649",
+      "https://news.hada.io/topic?id=37648",
+      "https://news.hada.io/topic?id=37647",
+      "https://news.hada.io/topic?id=37646",
+      "https://news.hada.io/topic?id=37645",
+      "https://news.hada.io/topic?id=37644",
+      "https://news.hada.io/topic?id=37643",
+      "https://news.hada.io/topic?id=37642",
+      "https://news.hada.io/topic?id=37641",
+      "https://news.hada.io/topic?id=37640",
+      "https://news.hada.io/topic?id=37639",
+      "https://news.hada.io/topic?id=37638",
+      "https://news.hada.io/topic?id=37636",
       "https://news.hada.io/topic?id=37629",
       "https://news.hada.io/topic?id=37628",
       "https://news.hada.io/topic?id=37627",
@@ -376,6 +396,106 @@
         "id": "https://news.hada.io/topic?id=37629",
         "title": "나스닥, 2026년 상승분 모두 반납",
         "link": "https://news.hada.io/topic?id=37629"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37636",
+        "title": "PcapAnalyzer - 27개 문제 탐지기를 갖춘 셀프 호스팅 pcap 분석기",
+        "link": "https://news.hada.io/topic?id=37636"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37638",
+        "title": "Show GN: Mixpeek - search inside the video and images in your S3 bucket",
+        "link": "https://news.hada.io/topic?id=37638"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37639",
+        "title": "AI는 모두에게 같은 조언을 하고 있다",
+        "link": "https://news.hada.io/topic?id=37639"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37640",
+        "title": "Pandex - MCP로 AI 에이전트에 공식 유럽 법률 자료 제공",
+        "link": "https://news.hada.io/topic?id=37640"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37641",
+        "title": "의식 있는 AI라는 신화",
+        "link": "https://news.hada.io/topic?id=37641"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37642",
+        "title": "JJ 방식으로 TODO 관리하기",
+        "link": "https://news.hada.io/topic?id=37642"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37643",
+        "title": "Show GN: Folkbench Pelican Database - 507개 AI 모델의 펠리컨 그림을 모은 오픈소스 데이터베이스",
+        "link": "https://news.hada.io/topic?id=37643"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37644",
+        "title": "Show HN: 플레이어가 LLM의 하위 에이전트가 되는 게임을 만들었습니다",
+        "link": "https://news.hada.io/topic?id=37644"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37645",
+        "title": "Fast-Anything: 전체를 Rust로 재작성하지 말고, 느린 5%만 재작성하라",
+        "link": "https://news.hada.io/topic?id=37645"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37646",
+        "title": "리만 가설 Lean 증명의 검증 파일",
+        "link": "https://news.hada.io/topic?id=37646"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37647",
+        "title": "AI 에이전트는 적힌 것을 지킨다",
+        "link": "https://news.hada.io/topic?id=37647"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37648",
+        "title": "Open Social Web Alliance - 개방형 소셜 웹의 공동 거버넌스와 인프라 구축을 위한 연합",
+        "link": "https://news.hada.io/topic?id=37648"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37649",
+        "title": "퍼플렉시티와 지능",
+        "link": "https://news.hada.io/topic?id=37649"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37650",
+        "title": "Show HN: OpenComputer - Devin의 오픈소스 대안",
+        "link": "https://news.hada.io/topic?id=37650"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37651",
+        "title": "성인만 사는 가구, 2026년 상반기 장난감 매출의 55% 차지",
+        "link": "https://news.hada.io/topic?id=37651"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37652",
+        "title": "AI 공급망 보안: 카나리 토큰이 발견한 것들",
+        "link": "https://news.hada.io/topic?id=37652"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37653",
+        "title": "Mojang을 위한 포트 스캐닝",
+        "link": "https://news.hada.io/topic?id=37653"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37654",
+        "title": "화학물질과 ‘생활습관병’의 연관성이 드러나는 가운데 유럽은 규제를 완화함",
+        "link": "https://news.hada.io/topic?id=37654"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37655",
+        "title": "화석연료를 둘러싼 격렬한 충돌로 결렬된 유엔 기후 협상",
+        "link": "https://news.hada.io/topic?id=37655"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37656",
+        "title": "남성에게 더 가혹한가? 갈등 상황에서 LLM의 성별 비대칭적 도덕 판단 평가",
+        "link": "https://news.hada.io/topic?id=37656"
       }
     ]
   },
