@@ -2,6 +2,25 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37629",
+      "https://news.hada.io/topic?id=37628",
+      "https://news.hada.io/topic?id=37627",
+      "https://news.hada.io/topic?id=37626",
+      "https://news.hada.io/topic?id=37625",
+      "https://news.hada.io/topic?id=37624",
+      "https://news.hada.io/topic?id=37622",
+      "https://news.hada.io/topic?id=37621",
+      "https://news.hada.io/topic?id=37620",
+      "https://news.hada.io/topic?id=37618",
+      "https://news.hada.io/topic?id=37617",
+      "https://news.hada.io/topic?id=37616",
+      "https://news.hada.io/topic?id=37615",
+      "https://news.hada.io/topic?id=37614",
+      "https://news.hada.io/topic?id=37613",
+      "https://news.hada.io/topic?id=37612",
+      "https://news.hada.io/topic?id=37611",
+      "https://news.hada.io/topic?id=37609",
+      "https://news.hada.io/topic?id=37608",
       "https://news.hada.io/topic?id=37607",
       "https://news.hada.io/topic?id=37604",
       "https://news.hada.io/topic?id=37603",
@@ -312,6 +331,101 @@
         "id": "https://news.hada.io/topic?id=37607",
         "title": "내 미술 작품 웹사이트의 기술 아키텍처가 꽤 마음에 든다",
         "link": "https://news.hada.io/topic?id=37607"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37608",
+        "title": "젠슨 황의 추락은 실리콘밸리 가속주의자들에게 악재임",
+        "link": "https://news.hada.io/topic?id=37608"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37609",
+        "title": "결재 서류를 쌓아 두던 부장에서 보고받는 사장으로 – Claude Code 매니저 세션 만들기",
+        "link": "https://news.hada.io/topic?id=37609"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37611",
+        "title": "놀랍도록 사랑스러운 곤충 초상 사진",
+        "link": "https://news.hada.io/topic?id=37611"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37612",
+        "title": "영국 냉장고, 해커 공격에 대비한 보안 조치 시행",
+        "link": "https://news.hada.io/topic?id=37612"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37613",
+        "title": "Zero C# - 런타임이나 GC 없는 C#",
+        "link": "https://news.hada.io/topic?id=37613"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37614",
+        "title": "Show GN: 반가워 - 무료 1:1 한-영 언어 교환 서비스",
+        "link": "https://news.hada.io/topic?id=37614"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37615",
+        "title": "Show GN: NeuroTerm, 사람과 AI 에이전트가 함께 쓰는 터미널",
+        "link": "https://news.hada.io/topic?id=37615"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37616",
+        "title": "Toyota, Nissan, Honda, 비용 절감을 위해 부품 표준화 추진",
+        "link": "https://news.hada.io/topic?id=37616"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37617",
+        "title": "샌드위치 시뮬레이터",
+        "link": "https://news.hada.io/topic?id=37617"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37618",
+        "title": "Show GN: Sensem - 광고·구매 링크 없이 취향 일치율로 탐색하는 실사용 기록 아카이브",
+        "link": "https://news.hada.io/topic?id=37618"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37620",
+        "title": "앞으로 나올 100개의 Rust GUI를 위한 조언",
+        "link": "https://news.hada.io/topic?id=37620"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37621",
+        "title": "사내 설치형 Git 서버·CI/CD 비교 – GitLab·Gitea·OneDev·GitHub Enterprise Server, 무료판에서 되는 ...",
+        "link": "https://news.hada.io/topic?id=37621"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37622",
+        "title": "Leonida - GTA 6 Xbox 버전의 PC 재컴파일 프로젝트",
+        "link": "https://news.hada.io/topic?id=37622"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37624",
+        "title": "Show GN: 삼성 인터넷 강제 다크 모드를 PC 크롬에서 미리 보는 확장",
+        "link": "https://news.hada.io/topic?id=37624"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37625",
+        "title": "추론 제공업체의 데이터 처리 사고",
+        "link": "https://news.hada.io/topic?id=37625"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37626",
+        "title": "2028년 Anthropic 전력의 87%는 가스, 11%는 석탄에서 공급될 전망",
+        "link": "https://news.hada.io/topic?id=37626"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37627",
+        "title": "Go로 PostgreSQL 확장 개발하기",
+        "link": "https://news.hada.io/topic?id=37627"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37628",
+        "title": "심각한 사이버공격 배후에 막대한 자금력을 갖춘 세력이 있는 것으로 추정",
+        "link": "https://news.hada.io/topic?id=37628"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37629",
+        "title": "나스닥, 2026년 상승분 모두 반납",
+        "link": "https://news.hada.io/topic?id=37629"
       }
     ]
   },
