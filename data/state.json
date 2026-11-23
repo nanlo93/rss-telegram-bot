@@ -289,56 +289,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37627",
-        "title": "Go로 PostgreSQL 확장 개발하기",
-        "link": "https://news.hada.io/topic?id=37627"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37628",
-        "title": "심각한 사이버공격 배후에 막대한 자금력을 갖춘 세력이 있는 것으로 추정",
-        "link": "https://news.hada.io/topic?id=37628"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37629",
-        "title": "나스닥, 2026년 상승분 모두 반납",
-        "link": "https://news.hada.io/topic?id=37629"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37636",
-        "title": "PcapAnalyzer - 27개 문제 탐지기를 갖춘 셀프 호스팅 pcap 분석기",
-        "link": "https://news.hada.io/topic?id=37636"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37638",
-        "title": "Show GN: Mixpeek - search inside the video and images in your S3 bucket",
-        "link": "https://news.hada.io/topic?id=37638"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37639",
-        "title": "AI는 모두에게 같은 조언을 하고 있다",
-        "link": "https://news.hada.io/topic?id=37639"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37640",
-        "title": "Pandex - MCP로 AI 에이전트에 공식 유럽 법률 자료 제공",
-        "link": "https://news.hada.io/topic?id=37640"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37641",
-        "title": "의식 있는 AI라는 신화",
-        "link": "https://news.hada.io/topic?id=37641"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37642",
-        "title": "JJ 방식으로 TODO 관리하기",
-        "link": "https://news.hada.io/topic?id=37642"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37643",
-        "title": "Show GN: Folkbench Pelican Database - 507개 AI 모델의 펠리컨 그림을 모은 오픈소스 데이터베이스",
-        "link": "https://news.hada.io/topic?id=37643"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37644",
         "title": "Show HN: 플레이어가 LLM의 하위 에이전트가 되는 게임을 만들었습니다",
         "link": "https://news.hada.io/topic?id=37644"
