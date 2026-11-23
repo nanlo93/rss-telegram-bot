@@ -252,56 +252,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37602",
-        "title": "Astra 6.2와 Sol 6.2, SimpleBench에서 부진",
-        "link": "https://news.hada.io/topic?id=37602"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37603",
-        "title": "마음으로 몸을 이끌어, 몸이 나를 이끌게 하기",
-        "link": "https://news.hada.io/topic?id=37603"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37604",
-        "title": "ClawDOS - DOS용 AI 코딩 에이전트",
-        "link": "https://news.hada.io/topic?id=37604"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37607",
-        "title": "내 미술 작품 웹사이트의 기술 아키텍처가 꽤 마음에 든다",
-        "link": "https://news.hada.io/topic?id=37607"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37608",
-        "title": "젠슨 황의 추락은 실리콘밸리 가속주의자들에게 악재임",
-        "link": "https://news.hada.io/topic?id=37608"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37609",
-        "title": "결재 서류를 쌓아 두던 부장에서 보고받는 사장으로 – Claude Code 매니저 세션 만들기",
-        "link": "https://news.hada.io/topic?id=37609"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37611",
-        "title": "놀랍도록 사랑스러운 곤충 초상 사진",
-        "link": "https://news.hada.io/topic?id=37611"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37612",
-        "title": "영국 냉장고, 해커 공격에 대비한 보안 조치 시행",
-        "link": "https://news.hada.io/topic?id=37612"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37613",
-        "title": "Zero C# - 런타임이나 GC 없는 C#",
-        "link": "https://news.hada.io/topic?id=37613"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37614",
-        "title": "Show GN: 반가워 - 무료 1:1 한-영 언어 교환 서비스",
-        "link": "https://news.hada.io/topic?id=37614"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37615",
         "title": "Show GN: NeuroTerm, 사람과 AI 에이전트가 함께 쓰는 터미널",
         "link": "https://news.hada.io/topic?id=37615"
