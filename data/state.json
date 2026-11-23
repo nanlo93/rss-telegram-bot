@@ -2,6 +2,23 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37702",
+      "https://news.hada.io/topic?id=37700",
+      "https://news.hada.io/topic?id=37699",
+      "https://news.hada.io/topic?id=37696",
+      "https://news.hada.io/topic?id=37695",
+      "https://news.hada.io/topic?id=37694",
+      "https://news.hada.io/topic?id=37693",
+      "https://news.hada.io/topic?id=37692",
+      "https://news.hada.io/topic?id=37691",
+      "https://news.hada.io/topic?id=37690",
+      "https://news.hada.io/topic?id=37689",
+      "https://news.hada.io/topic?id=37687",
+      "https://news.hada.io/topic?id=37686",
+      "https://news.hada.io/topic?id=37685",
+      "https://news.hada.io/topic?id=37684",
+      "https://news.hada.io/topic?id=37683",
+      "https://news.hada.io/topic?id=37682",
       "https://news.hada.io/topic?id=37681",
       "https://news.hada.io/topic?id=37680",
       "https://news.hada.io/topic?id=37679",
@@ -510,6 +527,91 @@
         "id": "https://news.hada.io/topic?id=37681",
         "title": "Nyx, 세계에서 가장 오래된 인터넷 서비스 제공업체",
         "link": "https://news.hada.io/topic?id=37681"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37682",
+        "title": "P vs. NP 해결에 도전하는 AI 에이전트 군집",
+        "link": "https://news.hada.io/topic?id=37682"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37683",
+        "title": "HUMAN.md",
+        "link": "https://news.hada.io/topic?id=37683"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37684",
+        "title": "디자이너와 함께 일하기",
+        "link": "https://news.hada.io/topic?id=37684"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37685",
+        "title": "Alibaba에서 구한 RISC-V 보드에 NixOS 구동하기",
+        "link": "https://news.hada.io/topic?id=37685"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37686",
+        "title": "Nespresso의 캡슐당 커피 중량 감축 프로젝트",
+        "link": "https://news.hada.io/topic?id=37686"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37687",
+        "title": "에이전트 시대의 Postgres 데이터베이스",
+        "link": "https://news.hada.io/topic?id=37687"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37689",
+        "title": "GL.iNet 보안 공지 2026-11-20: 라우터와 KVM 악성코드 감염 대응",
+        "link": "https://news.hada.io/topic?id=37689"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37690",
+        "title": "Internet Archive의 잊힌 영상으로 만든 무료 대안 TV 네트워크",
+        "link": "https://news.hada.io/topic?id=37690"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37691",
+        "title": "Masullo의 리만 가설 증명 시도",
+        "link": "https://news.hada.io/topic?id=37691"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37692",
+        "title": "사람들이 내 블로그 글에 관심 없다고 가정하라",
+        "link": "https://news.hada.io/topic?id=37692"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37693",
+        "title": "Show GN: HMAC Picker - HMAC기법과 SHA256방식 점수 해시화로 투명한 추첨과 누구나 검증이 가능한 추첨 도구",
+        "link": "https://news.hada.io/topic?id=37693"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37694",
+        "title": "쓸모없는 지식의 유용성 [pdf] (1939)",
+        "link": "https://news.hada.io/topic?id=37694"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37695",
+        "title": "Show GN: 오분만 - 약속 시간에서 거꾸로 계산해 깨워 주는 알람 앱",
+        "link": "https://news.hada.io/topic?id=37695"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37696",
+        "title": "GitHub Actions는 유효하지 않은 YAML도 허용함",
+        "link": "https://news.hada.io/topic?id=37696"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37699",
+        "title": "Show GN: 나라니 - 계약서를 읽고 상대에게 보낼 조건 제안을 준비하는 도구",
+        "link": "https://news.hada.io/topic?id=37699"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37700",
+        "title": "XNU Linux: Linux에서 완전한 OS X GUI 사용자 공간 실행",
+        "link": "https://news.hada.io/topic?id=37700"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37702",
+        "title": "DeFlock America Facebook 그룹, 위험 조직으로 분류돼 활동 정지",
+        "link": "https://news.hada.io/topic?id=37702"
       }
     ]
   },
