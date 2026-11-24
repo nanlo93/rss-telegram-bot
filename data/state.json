@@ -2,6 +2,25 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37757",
+      "https://news.hada.io/topic?id=37755",
+      "https://news.hada.io/topic?id=37753",
+      "https://news.hada.io/topic?id=37752",
+      "https://news.hada.io/topic?id=37749",
+      "https://news.hada.io/topic?id=37748",
+      "https://news.hada.io/topic?id=37745",
+      "https://news.hada.io/topic?id=37744",
+      "https://news.hada.io/topic?id=37743",
+      "https://news.hada.io/topic?id=37742",
+      "https://news.hada.io/topic?id=37741",
+      "https://news.hada.io/topic?id=37740",
+      "https://news.hada.io/topic?id=37739",
+      "https://news.hada.io/topic?id=37736",
+      "https://news.hada.io/topic?id=37734",
+      "https://news.hada.io/topic?id=37733",
+      "https://news.hada.io/topic?id=37732",
+      "https://news.hada.io/topic?id=37731",
+      "https://news.hada.io/topic?id=37730",
       "https://news.hada.io/topic?id=37729",
       "https://news.hada.io/topic?id=37728",
       "https://news.hada.io/topic?id=37727",
@@ -632,6 +651,101 @@
         "id": "https://news.hada.io/topic?id=37729",
         "title": "Yann LeCun, “Dario는 오픈소스 모델을 불법화하고 통제권을 유지하려 위험을 과장하고 있다”",
         "link": "https://news.hada.io/topic?id=37729"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37730",
+        "title": "Show GN: WebDecoy Node SDK - Node.js에서 봇 탐지 규칙을 로컬로 검증",
+        "link": "https://news.hada.io/topic?id=37730"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37731",
+        "title": "“Arm의 요청에 따라 이 사이트는 2026년 12월 4일 운영을 종료합니다”",
+        "link": "https://news.hada.io/topic?id=37731"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37732",
+        "title": "Apple, 9년간 운영한 내 오픈소스 앱을 EU App Store에서 삭제",
+        "link": "https://news.hada.io/topic?id=37732"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37733",
+        "title": "Show GN: PQ-Proof - PQC 전환이 끝났는지 전환 전후 코드를 비교해 판정하는 오프라인 도구",
+        "link": "https://news.hada.io/topic?id=37733"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37734",
+        "title": "SSH 키를 디스크에 보관하지 말자",
+        "link": "https://news.hada.io/topic?id=37734"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37736",
+        "title": "모든 체에서 VP ≠ VNP",
+        "link": "https://news.hada.io/topic?id=37736"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37739",
+        "title": "경영진과 대화하는 법: 논쟁하기 전에 금액으로 환산하라",
+        "link": "https://news.hada.io/topic?id=37739"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37740",
+        "title": "OpenAI와 Cisco, 실행 중인 Linux 시스템을 보호하는 오픈소스 런타임 Shirudo 공개",
+        "link": "https://news.hada.io/topic?id=37740"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37741",
+        "title": "shirudo - 에이전트 시대를 위한 BPF 라이브 패치 인프라",
+        "link": "https://news.hada.io/topic?id=37741"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37742",
+        "title": "Pine - 파일과 메시지, 기기 변화에 반응해 작업하는 AI 에이전트 하네스",
+        "link": "https://news.hada.io/topic?id=37742"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37743",
+        "title": "FastFrames - 실시간 상호작용이 가능한 저지연 영상 생성",
+        "link": "https://news.hada.io/topic?id=37743"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37744",
+        "title": "Stalwart, 이제 Microsoft Exchange를 그대로 대체할 수 있음",
+        "link": "https://news.hada.io/topic?id=37744"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37745",
+        "title": "평가는 AI 엔지니어링에서 가장 과소평가된 역량이다",
+        "link": "https://news.hada.io/topic?id=37745"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37748",
+        "title": "Jensen Huang의 복귀는 미국 역사상 최대 국가안보 스캔들",
+        "link": "https://news.hada.io/topic?id=37748"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37749",
+        "title": "NariQ: BF16 수준의 Qwen3.8-27B를 10GB 파일에 담다",
+        "link": "https://news.hada.io/topic?id=37749"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37752",
+        "title": "GPUI가 독립 저장소를 갖게 됨",
+        "link": "https://news.hada.io/topic?id=37752"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37753",
+        "title": "Show GN: CRAMA FILE – 파일을 서버에 안 올리는 무료 PDF·이미지 도구 21종",
+        "link": "https://news.hada.io/topic?id=37753"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37755",
+        "title": "Bored.com: 심심할 때 둘러볼 재미있고 흥미로운 웹사이트 모음",
+        "link": "https://news.hada.io/topic?id=37755"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37757",
+        "title": "Show GN: Synology Markdown Note - Synology Note Station용 Markdown 편집기",
+        "link": "https://news.hada.io/topic?id=37757"
       }
     ]
   },
