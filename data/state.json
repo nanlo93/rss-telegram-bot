@@ -308,56 +308,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37644",
-        "title": "Show HN: 플레이어가 LLM의 하위 에이전트가 되는 게임을 만들었습니다",
-        "link": "https://news.hada.io/topic?id=37644"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37645",
-        "title": "Fast-Anything: 전체를 Rust로 재작성하지 말고, 느린 5%만 재작성하라",
-        "link": "https://news.hada.io/topic?id=37645"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37646",
-        "title": "리만 가설 Lean 증명의 검증 파일",
-        "link": "https://news.hada.io/topic?id=37646"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37647",
-        "title": "AI 에이전트는 적힌 것을 지킨다",
-        "link": "https://news.hada.io/topic?id=37647"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37648",
-        "title": "Open Social Web Alliance - 개방형 소셜 웹의 공동 거버넌스와 인프라 구축을 위한 연합",
-        "link": "https://news.hada.io/topic?id=37648"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37649",
-        "title": "퍼플렉시티와 지능",
-        "link": "https://news.hada.io/topic?id=37649"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37650",
-        "title": "Show HN: OpenComputer - Devin의 오픈소스 대안",
-        "link": "https://news.hada.io/topic?id=37650"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37651",
-        "title": "성인만 사는 가구, 2026년 상반기 장난감 매출의 55% 차지",
-        "link": "https://news.hada.io/topic?id=37651"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37652",
-        "title": "AI 공급망 보안: 카나리 토큰이 발견한 것들",
-        "link": "https://news.hada.io/topic?id=37652"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37653",
-        "title": "Mojang을 위한 포트 스캐닝",
-        "link": "https://news.hada.io/topic?id=37653"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37654",
         "title": "화학물질과 ‘생활습관병’의 연관성이 드러나는 가운데 유럽은 규제를 완화함",
         "link": "https://news.hada.io/topic?id=37654"
