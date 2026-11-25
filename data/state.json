@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37832",
+      "https://news.hada.io/topic?id=37831",
+      "https://news.hada.io/topic?id=37829",
+      "https://news.hada.io/topic?id=37827",
+      "https://news.hada.io/topic?id=37826",
+      "https://news.hada.io/topic?id=37824",
+      "https://news.hada.io/topic?id=37823",
+      "https://news.hada.io/topic?id=37822",
+      "https://news.hada.io/topic?id=37819",
+      "https://news.hada.io/topic?id=37818",
       "https://news.hada.io/topic?id=37814",
       "https://news.hada.io/topic?id=37813",
       "https://news.hada.io/topic?id=37812",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37438",
       "https://news.hada.io/topic?id=37437",
       "https://news.hada.io/topic?id=37436",
-      "https://news.hada.io/topic?id=37435",
-      "https://news.hada.io/topic?id=37434",
-      "https://news.hada.io/topic?id=37433",
-      "https://news.hada.io/topic?id=37432",
-      "https://news.hada.io/topic?id=37431",
-      "https://news.hada.io/topic?id=37430",
-      "https://news.hada.io/topic?id=37429",
-      "https://news.hada.io/topic?id=37426",
-      "https://news.hada.io/topic?id=37425",
-      "https://news.hada.io/topic?id=37421",
-      "https://news.hada.io/topic?id=37420"
+      "https://news.hada.io/topic?id=37435"
     ]
   },
   "fails": {},
@@ -757,6 +757,56 @@
         "id": "https://news.hada.io/topic?id=37814",
         "title": "Grafana 12.4.16, 13.0.14, 13.1.11, 13.2.7, 13.3.2 (여러 CVE 관련)",
         "link": "https://news.hada.io/topic?id=37814"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37818",
+        "title": "여행 가방에 들어가는 이탈리아 접이식 자전거 디자인",
+        "link": "https://news.hada.io/topic?id=37818"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37819",
+        "title": "PenGPT: 손글씨와 스케치를 위한 생성형 Transformer",
+        "link": "https://news.hada.io/topic?id=37819"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37822",
+        "title": "Button Sounds - 전문적으로 녹음한 버튼 클릭과 누름 소리 모음",
+        "link": "https://news.hada.io/topic?id=37822"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37823",
+        "title": "USB-C 분리하기: 포트 하나에서 USB 3와 USB 2 함께 쓰기",
+        "link": "https://news.hada.io/topic?id=37823"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37824",
+        "title": "샌드박스에 격리된 모델도 추론 서버를 통해 통신할 수 있음",
+        "link": "https://news.hada.io/topic?id=37824"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37826",
+        "title": "나는 요즘 부엌에서 와인을 마시고 있다",
+        "link": "https://news.hada.io/topic?id=37826"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37827",
+        "title": "Gemini가 ‘반짝반짝 작은 별’ 가사를 알려 달라는 요청을 거부함",
+        "link": "https://news.hada.io/topic?id=37827"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37829",
+        "title": "Per Vognsen이 살펴본 AVX-512의 렉싱과 파싱 성능 영향",
+        "link": "https://news.hada.io/topic?id=37829"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37831",
+        "title": "Show GN: gpgpru - 고2가 만들어본 gpgpu crate",
+        "link": "https://news.hada.io/topic?id=37831"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37832",
+        "title": "iOS Safari의 60 FPS 제한을 우회해 네이티브처럼 느껴지는 웹 애플리케이션 만들기",
+        "link": "https://news.hada.io/topic?id=37832"
       }
     ]
   },
@@ -765,11 +815,16 @@
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37818",
-      "https://news.hada.io/topic?id=37819",
-      "https://news.hada.io/topic?id=37822",
-      "https://news.hada.io/topic?id=37823",
-      "https://news.hada.io/topic?id=37824"
+      "https://news.hada.io/topic?id=37833",
+      "https://news.hada.io/topic?id=37835",
+      "https://news.hada.io/topic?id=37838",
+      "https://news.hada.io/topic?id=37840",
+      "https://news.hada.io/topic?id=37841",
+      "https://news.hada.io/topic?id=37842",
+      "https://news.hada.io/topic?id=37843",
+      "https://news.hada.io/topic?id=37844",
+      "https://news.hada.io/topic?id=37845",
+      "https://news.hada.io/topic?id=37846"
     ]
   },
   "lost": {},
