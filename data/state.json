@@ -2,6 +2,18 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37814",
+      "https://news.hada.io/topic?id=37813",
+      "https://news.hada.io/topic?id=37812",
+      "https://news.hada.io/topic?id=37811",
+      "https://news.hada.io/topic?id=37808",
+      "https://news.hada.io/topic?id=37807",
+      "https://news.hada.io/topic?id=37806",
+      "https://news.hada.io/topic?id=37804",
+      "https://news.hada.io/topic?id=37802",
+      "https://news.hada.io/topic?id=37801",
+      "https://news.hada.io/topic?id=37800",
+      "https://news.hada.io/topic?id=37799",
       "https://news.hada.io/topic?id=37798",
       "https://news.hada.io/topic?id=37797",
       "https://news.hada.io/topic?id=37796",
@@ -289,19 +301,7 @@
       "https://news.hada.io/topic?id=37426",
       "https://news.hada.io/topic?id=37425",
       "https://news.hada.io/topic?id=37421",
-      "https://news.hada.io/topic?id=37420",
-      "https://news.hada.io/topic?id=37419",
-      "https://news.hada.io/topic?id=37418",
-      "https://news.hada.io/topic?id=37417",
-      "https://news.hada.io/topic?id=37416",
-      "https://news.hada.io/topic?id=37415",
-      "https://news.hada.io/topic?id=37414",
-      "https://news.hada.io/topic?id=37413",
-      "https://news.hada.io/topic?id=37411",
-      "https://news.hada.io/topic?id=37410",
-      "https://news.hada.io/topic?id=37409",
-      "https://news.hada.io/topic?id=37408",
-      "https://news.hada.io/topic?id=37406"
+      "https://news.hada.io/topic?id=37420"
     ]
   },
   "fails": {},
@@ -747,13 +747,86 @@
         "id": "https://news.hada.io/topic?id=37798",
         "title": "유휴 컴퓨팅 자원으로 로컬 모델을 학습시키는 엔진",
         "link": "https://news.hada.io/topic?id=37798"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37799",
+        "title": "데이터 표현을 위한 Lua",
+        "link": "https://news.hada.io/topic?id=37799"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37800",
+        "title": "MailFlow - 여러 이메일 계정을 한곳에서 관리하는 셀프호스팅 웹메일",
+        "link": "https://news.hada.io/topic?id=37800"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37801",
+        "title": "iPod Nano 5G 해방하기",
+        "link": "https://news.hada.io/topic?id=37801"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37802",
+        "title": "Cloudflare가 기반 인프라의 미비점을 가림",
+        "link": "https://news.hada.io/topic?id=37802"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37804",
+        "title": "오픈 소스에서 월 반복 매출 2만 달러까지: EmailEngine의 여정",
+        "link": "https://news.hada.io/topic?id=37804"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37806",
+        "title": "2026년 기업용 AI 현황",
+        "link": "https://news.hada.io/topic?id=37806"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37807",
+        "title": "AI 네이티브 서비스 비즈니스 모델의 내부 구조",
+        "link": "https://news.hada.io/topic?id=37807"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37808",
+        "title": "GPT-6 모델, 내재적 단백질 설계 능력 입증",
+        "link": "https://news.hada.io/topic?id=37808"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37811",
+        "title": "Show GN: Tern - Ctrl+ㅊ 를 Ctrl-C 로 처리해주는 한글 특화 터미널 에뮬레이터 앱",
+        "link": "https://news.hada.io/topic?id=37811"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37812",
+        "title": "심장마비와 뇌졸중 위험, 수십 년 전에 감지 가능",
+        "link": "https://news.hada.io/topic?id=37812"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37813",
+        "title": "Matrix Multiplication의 Θ(n^2.25) 시간 복잡도 [pdf]",
+        "link": "https://news.hada.io/topic?id=37813"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37814",
+        "title": "Grafana 12.4.16, 13.0.14, 13.1.11, 13.2.7, 13.3.2 (여러 CVE 관련)",
+        "link": "https://news.hada.io/topic?id=37814"
       }
     ]
   },
   "dropped": {},
-  "outbox": [],
+  "outbox": [
+    {
+      "text": "'GeekNews' 대기열이 가득 차 새 글 5건의 알림을 미룹니다. 전송이 정상화되기 전에 피드에서 밀려나면 알리지 못할 수 있습니다.",
+      "kind": "notice"
+    }
+  ],
   "rebase": {},
-  "deferred": {},
+  "deferred": {
+    "1": [
+      "https://news.hada.io/topic?id=37818",
+      "https://news.hada.io/topic?id=37819",
+      "https://news.hada.io/topic?id=37822",
+      "https://news.hada.io/topic?id=37823",
+      "https://news.hada.io/topic?id=37824"
+    ]
+  },
   "lost": {},
   "fail_warn": {}
 }
