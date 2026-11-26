@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37871",
+      "https://news.hada.io/topic?id=37870",
+      "https://news.hada.io/topic?id=37868",
+      "https://news.hada.io/topic?id=37867",
+      "https://news.hada.io/topic?id=37866",
+      "https://news.hada.io/topic?id=37865",
+      "https://news.hada.io/topic?id=37863",
+      "https://news.hada.io/topic?id=37861",
+      "https://news.hada.io/topic?id=37860",
+      "https://news.hada.io/topic?id=37859",
       "https://news.hada.io/topic?id=37852",
       "https://news.hada.io/topic?id=37851",
       "https://news.hada.io/topic?id=37850",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37470",
       "https://news.hada.io/topic?id=37467",
       "https://news.hada.io/topic?id=37466",
-      "https://news.hada.io/topic?id=37465",
-      "https://news.hada.io/topic?id=37463",
-      "https://news.hada.io/topic?id=37461",
-      "https://news.hada.io/topic?id=37459",
-      "https://news.hada.io/topic?id=37458",
-      "https://news.hada.io/topic?id=37456",
-      "https://news.hada.io/topic?id=37454",
-      "https://news.hada.io/topic?id=37453",
-      "https://news.hada.io/topic?id=37452",
-      "https://news.hada.io/topic?id=37451",
-      "https://news.hada.io/topic?id=37448"
+      "https://news.hada.io/topic?id=37465"
     ]
   },
   "fails": {},
@@ -757,24 +757,79 @@
         "id": "https://news.hada.io/topic?id=37852",
         "title": "여섯 가지 사실로 보는 거시경제사",
         "link": "https://news.hada.io/topic?id=37852"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37859",
+        "title": "Jev는 아마도 Qwen3.5-35B-A3B 기반일 것",
+        "link": "https://news.hada.io/topic?id=37859"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37860",
+        "title": "Relax - Rust 코드를 바로 실행하고 수정 사항을 반영하는 JIT 컴파일러",
+        "link": "https://news.hada.io/topic?id=37860"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37861",
+        "title": "오래된 Java 휴대폰을 다시 인터넷에 연결하기",
+        "link": "https://news.hada.io/topic?id=37861"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37863",
+        "title": "락 포이즈닝을 폐지하자",
+        "link": "https://news.hada.io/topic?id=37863"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37865",
+        "title": "바이럴 제품 출시의 비밀",
+        "link": "https://news.hada.io/topic?id=37865"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37866",
+        "title": "2026 앱 수익화 현황: 앱이 월 500달러에서 100만 달러까지 성장하는 방법",
+        "link": "https://news.hada.io/topic?id=37866"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37867",
+        "title": "AI 검색 메타 분석 - 2026년 4분기",
+        "link": "https://news.hada.io/topic?id=37867"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37868",
+        "title": "지금 효과를 내는 B2B GTM 전략 5가지와 실제 사례",
+        "link": "https://news.hada.io/topic?id=37868"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37870",
+        "title": "우리가 알던 기능 발견 방식의 종말",
+        "link": "https://news.hada.io/topic?id=37870"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37871",
+        "title": "1인 조직이 온다",
+        "link": "https://news.hada.io/topic?id=37871"
       }
     ]
   },
   "dropped": {},
-  "outbox": [],
+  "outbox": [
+    {
+      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 4건이 피드에서 밀려나 알리지 못했습니다.",
+      "kind": "notice"
+    }
+  ],
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37853",
-      "https://news.hada.io/topic?id=37854",
-      "https://news.hada.io/topic?id=37857",
-      "https://news.hada.io/topic?id=37858",
-      "https://news.hada.io/topic?id=37859",
-      "https://news.hada.io/topic?id=37860",
-      "https://news.hada.io/topic?id=37861",
-      "https://news.hada.io/topic?id=37863",
-      "https://news.hada.io/topic?id=37865",
-      "https://news.hada.io/topic?id=37866"
+      "https://news.hada.io/topic?id=37876",
+      "https://news.hada.io/topic?id=37878",
+      "https://news.hada.io/topic?id=37879",
+      "https://news.hada.io/topic?id=37880",
+      "https://news.hada.io/topic?id=37883",
+      "https://news.hada.io/topic?id=37884",
+      "https://news.hada.io/topic?id=37885",
+      "https://news.hada.io/topic?id=37886",
+      "https://news.hada.io/topic?id=37888",
+      "https://news.hada.io/topic?id=37889"
     ]
   },
   "lost": {},
