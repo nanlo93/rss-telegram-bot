@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37903",
+      "https://news.hada.io/topic?id=37902",
+      "https://news.hada.io/topic?id=37901",
+      "https://news.hada.io/topic?id=37900",
+      "https://news.hada.io/topic?id=37899",
+      "https://news.hada.io/topic?id=37897",
+      "https://news.hada.io/topic?id=37896",
+      "https://news.hada.io/topic?id=37894",
+      "https://news.hada.io/topic?id=37893",
+      "https://news.hada.io/topic?id=37891",
       "https://news.hada.io/topic?id=37871",
       "https://news.hada.io/topic?id=37870",
       "https://news.hada.io/topic?id=37868",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37481",
       "https://news.hada.io/topic?id=37480",
       "https://news.hada.io/topic?id=37479",
-      "https://news.hada.io/topic?id=37478",
-      "https://news.hada.io/topic?id=37477",
-      "https://news.hada.io/topic?id=37476",
-      "https://news.hada.io/topic?id=37474",
-      "https://news.hada.io/topic?id=37473",
-      "https://news.hada.io/topic?id=37472",
-      "https://news.hada.io/topic?id=37471",
-      "https://news.hada.io/topic?id=37470",
-      "https://news.hada.io/topic?id=37467",
-      "https://news.hada.io/topic?id=37466",
-      "https://news.hada.io/topic?id=37465"
+      "https://news.hada.io/topic?id=37478"
     ]
   },
   "fails": {},
@@ -757,24 +757,79 @@
         "id": "https://news.hada.io/topic?id=37871",
         "title": "1인 조직이 온다",
         "link": "https://news.hada.io/topic?id=37871"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37891",
+        "title": "베어메탈 Qwen - 순수 어셈블리 24KB OS에서 Qwen3-0.6B 실행",
+        "link": "https://news.hada.io/topic?id=37891"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37893",
+        "title": "Show GN: sol-astrizer: 모든 LLM이 GPT 6.2처럼 말하게 된다면",
+        "link": "https://news.hada.io/topic?id=37893"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37894",
+        "title": "Show GN: 배럴 - 광고 차단 브라우저와 다운로드 매니저를 하나로 합친 Android 앱",
+        "link": "https://news.hada.io/topic?id=37894"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37896",
+        "title": "NFS2ROOT: Linux 커널 NFS 서버에 12년간 존재한 인증 전 원격 루트 취약점",
+        "link": "https://news.hada.io/topic?id=37896"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37897",
+        "title": "minipg: PostgreSQL을 단일 실행 파일로 실행하기",
+        "link": "https://news.hada.io/topic?id=37897"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37899",
+        "title": "Intel One Mono - 개발자 가독성을 고려한 고정폭 글꼴",
+        "link": "https://news.hada.io/topic?id=37899"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37900",
+        "title": "Rustc의 차세대 트레이트 해결기 최적화",
+        "link": "https://news.hada.io/topic?id=37900"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37901",
+        "title": "Lions의 Unix 해설서가 20년 동안 몰래 복사된 이유",
+        "link": "https://news.hada.io/topic?id=37901"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37902",
+        "title": "Euro-Office, Nextcloud Office Desktop 앱으로 데스크톱에 진출",
+        "link": "https://news.hada.io/topic?id=37902"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37903",
+        "title": "재무부 CIO, 본업 대신 바이브 코딩에 너무 바쁜 상태 #147",
+        "link": "https://news.hada.io/topic?id=37903"
       }
     ]
   },
   "dropped": {},
-  "outbox": [],
+  "outbox": [
+    {
+      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 10건이 피드에서 밀려나 알리지 못했습니다.",
+      "kind": "notice"
+    }
+  ],
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37876",
-      "https://news.hada.io/topic?id=37878",
-      "https://news.hada.io/topic?id=37879",
-      "https://news.hada.io/topic?id=37880",
-      "https://news.hada.io/topic?id=37883",
-      "https://news.hada.io/topic?id=37884",
-      "https://news.hada.io/topic?id=37885",
-      "https://news.hada.io/topic?id=37886",
-      "https://news.hada.io/topic?id=37888",
-      "https://news.hada.io/topic?id=37889"
+      "https://news.hada.io/topic?id=37904",
+      "https://news.hada.io/topic?id=37907",
+      "https://news.hada.io/topic?id=37908",
+      "https://news.hada.io/topic?id=37909",
+      "https://news.hada.io/topic?id=37910",
+      "https://news.hada.io/topic?id=37911",
+      "https://news.hada.io/topic?id=37912",
+      "https://news.hada.io/topic?id=37913",
+      "https://news.hada.io/topic?id=37914",
+      "https://news.hada.io/topic?id=37915"
     ]
   },
   "lost": {},
