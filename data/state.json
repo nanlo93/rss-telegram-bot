@@ -309,56 +309,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37731",
-        "title": "“Arm의 요청에 따라 이 사이트는 2026년 12월 4일 운영을 종료합니다”",
-        "link": "https://news.hada.io/topic?id=37731"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37732",
-        "title": "Apple, 9년간 운영한 내 오픈소스 앱을 EU App Store에서 삭제",
-        "link": "https://news.hada.io/topic?id=37732"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37733",
-        "title": "Show GN: PQ-Proof - PQC 전환이 끝났는지 전환 전후 코드를 비교해 판정하는 오프라인 도구",
-        "link": "https://news.hada.io/topic?id=37733"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37734",
-        "title": "SSH 키를 디스크에 보관하지 말자",
-        "link": "https://news.hada.io/topic?id=37734"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37736",
-        "title": "모든 체에서 VP ≠ VNP",
-        "link": "https://news.hada.io/topic?id=37736"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37739",
-        "title": "경영진과 대화하는 법: 논쟁하기 전에 금액으로 환산하라",
-        "link": "https://news.hada.io/topic?id=37739"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37740",
-        "title": "OpenAI와 Cisco, 실행 중인 Linux 시스템을 보호하는 오픈소스 런타임 Shirudo 공개",
-        "link": "https://news.hada.io/topic?id=37740"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37741",
-        "title": "shirudo - 에이전트 시대를 위한 BPF 라이브 패치 인프라",
-        "link": "https://news.hada.io/topic?id=37741"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37742",
-        "title": "Pine - 파일과 메시지, 기기 변화에 반응해 작업하는 AI 에이전트 하네스",
-        "link": "https://news.hada.io/topic?id=37742"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37743",
-        "title": "FastFrames - 실시간 상호작용이 가능한 저지연 영상 생성",
-        "link": "https://news.hada.io/topic?id=37743"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37744",
         "title": "Stalwart, 이제 Microsoft Exchange를 그대로 대체할 수 있음",
         "link": "https://news.hada.io/topic?id=37744"
@@ -811,12 +761,7 @@
     ]
   },
   "dropped": {},
-  "outbox": [
-    {
-      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 10건이 피드에서 밀려나 알리지 못했습니다.",
-      "kind": "notice"
-    }
-  ],
+  "outbox": [],
   "rebase": {},
   "deferred": {
     "1": [
