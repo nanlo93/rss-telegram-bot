@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37852",
+      "https://news.hada.io/topic?id=37851",
+      "https://news.hada.io/topic?id=37850",
+      "https://news.hada.io/topic?id=37849",
+      "https://news.hada.io/topic?id=37848",
+      "https://news.hada.io/topic?id=37847",
+      "https://news.hada.io/topic?id=37846",
+      "https://news.hada.io/topic?id=37845",
+      "https://news.hada.io/topic?id=37844",
+      "https://news.hada.io/topic?id=37843",
       "https://news.hada.io/topic?id=37832",
       "https://news.hada.io/topic?id=37831",
       "https://news.hada.io/topic?id=37829",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37453",
       "https://news.hada.io/topic?id=37452",
       "https://news.hada.io/topic?id=37451",
-      "https://news.hada.io/topic?id=37448",
-      "https://news.hada.io/topic?id=37447",
-      "https://news.hada.io/topic?id=37446",
-      "https://news.hada.io/topic?id=37445",
-      "https://news.hada.io/topic?id=37442",
-      "https://news.hada.io/topic?id=37441",
-      "https://news.hada.io/topic?id=37440",
-      "https://news.hada.io/topic?id=37438",
-      "https://news.hada.io/topic?id=37437",
-      "https://news.hada.io/topic?id=37436",
-      "https://news.hada.io/topic?id=37435"
+      "https://news.hada.io/topic?id=37448"
     ]
   },
   "fails": {},
@@ -757,24 +757,79 @@
         "id": "https://news.hada.io/topic?id=37832",
         "title": "iOS Safari의 60 FPS 제한을 우회해 네이티브처럼 느껴지는 웹 애플리케이션 만들기",
         "link": "https://news.hada.io/topic?id=37832"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37843",
+        "title": "Just a Few Bugs - Pixel 취약점 95건 신고와 Google 보상 절차의 문제",
+        "link": "https://news.hada.io/topic?id=37843"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37844",
+        "title": "Show GN: Hearlog - 녹음을 내 Gemini 키로 받아쓰고 요약해 Markdown 파일로 남기는 앱",
+        "link": "https://news.hada.io/topic?id=37844"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37845",
+        "title": "Home Depot 저류지에서 스노클링한 사람에게 던진 몇 가지 질문",
+        "link": "https://news.hada.io/topic?id=37845"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37846",
+        "title": "연구소들이 Factoring in P를 해결했을 수 있다는 소문 확산",
+        "link": "https://news.hada.io/topic?id=37846"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37847",
+        "title": "1Password 보안 사고",
+        "link": "https://news.hada.io/topic?id=37847"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37848",
+        "title": "Lean으로 Clojure 코어를 검사해 미보고 버그 17개를 발견함",
+        "link": "https://news.hada.io/topic?id=37848"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37849",
+        "title": "GitHub 제품 전반의 서비스 저하 조사",
+        "link": "https://news.hada.io/topic?id=37849"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37850",
+        "title": "세상에, 세상에, 세상에, 세상에: 지금 벌어지는 일의 엄청난 규모",
+        "link": "https://news.hada.io/topic?id=37850"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37851",
+        "title": "똑똑하고 진심으로 책임지는 사람들은 도구를 쓴다",
+        "link": "https://news.hada.io/topic?id=37851"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37852",
+        "title": "여섯 가지 사실로 보는 거시경제사",
+        "link": "https://news.hada.io/topic?id=37852"
       }
     ]
   },
   "dropped": {},
-  "outbox": [],
+  "outbox": [
+    {
+      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 6건이 피드에서 밀려나 알리지 못했습니다.",
+      "kind": "notice"
+    }
+  ],
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37833",
-      "https://news.hada.io/topic?id=37835",
-      "https://news.hada.io/topic?id=37838",
-      "https://news.hada.io/topic?id=37840",
-      "https://news.hada.io/topic?id=37841",
-      "https://news.hada.io/topic?id=37842",
-      "https://news.hada.io/topic?id=37843",
-      "https://news.hada.io/topic?id=37844",
-      "https://news.hada.io/topic?id=37845",
-      "https://news.hada.io/topic?id=37846"
+      "https://news.hada.io/topic?id=37853",
+      "https://news.hada.io/topic?id=37854",
+      "https://news.hada.io/topic?id=37857",
+      "https://news.hada.io/topic?id=37858",
+      "https://news.hada.io/topic?id=37859",
+      "https://news.hada.io/topic?id=37860",
+      "https://news.hada.io/topic?id=37861",
+      "https://news.hada.io/topic?id=37863",
+      "https://news.hada.io/topic?id=37865",
+      "https://news.hada.io/topic?id=37866"
     ]
   },
   "lost": {},
