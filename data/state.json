@@ -309,56 +309,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37744",
-        "title": "Stalwart, 이제 Microsoft Exchange를 그대로 대체할 수 있음",
-        "link": "https://news.hada.io/topic?id=37744"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37745",
-        "title": "평가는 AI 엔지니어링에서 가장 과소평가된 역량이다",
-        "link": "https://news.hada.io/topic?id=37745"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37748",
-        "title": "Jensen Huang의 복귀는 미국 역사상 최대 국가안보 스캔들",
-        "link": "https://news.hada.io/topic?id=37748"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37749",
-        "title": "NariQ: BF16 수준의 Qwen3.8-27B를 10GB 파일에 담다",
-        "link": "https://news.hada.io/topic?id=37749"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37752",
-        "title": "GPUI가 독립 저장소를 갖게 됨",
-        "link": "https://news.hada.io/topic?id=37752"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37753",
-        "title": "Show GN: CRAMA FILE – 파일을 서버에 안 올리는 무료 PDF·이미지 도구 21종",
-        "link": "https://news.hada.io/topic?id=37753"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37755",
-        "title": "Bored.com: 심심할 때 둘러볼 재미있고 흥미로운 웹사이트 모음",
-        "link": "https://news.hada.io/topic?id=37755"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37757",
-        "title": "Show GN: Synology Markdown Note - Synology Note Station용 Markdown 편집기",
-        "link": "https://news.hada.io/topic?id=37757"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37764",
-        "title": "뉴욕주, 자동차 구독료와 구매 후 추가 요금 금지",
-        "link": "https://news.hada.io/topic?id=37764"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37765",
-        "title": "뉴욕주, 지속 비용 없는 자동차 내장 기능의 구독료와 구매 후 추가 요금 금지",
-        "link": "https://news.hada.io/topic?id=37765"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37766",
         "title": "Show GN: Whaatcher - AI 에이전트 기반 W/F에 최적화된 새로운 지향점의 개발 도구",
         "link": "https://news.hada.io/topic?id=37766"
@@ -811,12 +761,7 @@
     ]
   },
   "dropped": {},
-  "outbox": [
-    {
-      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 2건이 피드에서 밀려나 알리지 못했습니다.",
-      "kind": "notice"
-    }
-  ],
+  "outbox": [],
   "rebase": {},
   "deferred": {
     "1": [
