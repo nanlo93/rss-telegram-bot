@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37944",
+      "https://news.hada.io/topic?id=37942",
+      "https://news.hada.io/topic?id=37941",
+      "https://news.hada.io/topic?id=37939",
+      "https://news.hada.io/topic?id=37938",
+      "https://news.hada.io/topic?id=37937",
+      "https://news.hada.io/topic?id=37934",
+      "https://news.hada.io/topic?id=37933",
+      "https://news.hada.io/topic?id=37932",
+      "https://news.hada.io/topic?id=37931",
       "https://news.hada.io/topic?id=37917",
       "https://news.hada.io/topic?id=37916",
       "https://news.hada.io/topic?id=37915",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37506",
       "https://news.hada.io/topic?id=37505",
       "https://news.hada.io/topic?id=37504",
-      "https://news.hada.io/topic?id=37502",
-      "https://news.hada.io/topic?id=37499",
-      "https://news.hada.io/topic?id=37498",
-      "https://news.hada.io/topic?id=37497",
-      "https://news.hada.io/topic?id=37496",
-      "https://news.hada.io/topic?id=37494",
-      "https://news.hada.io/topic?id=37493",
-      "https://news.hada.io/topic?id=37492",
-      "https://news.hada.io/topic?id=37491",
-      "https://news.hada.io/topic?id=37490",
-      "https://news.hada.io/topic?id=37489"
+      "https://news.hada.io/topic?id=37502"
     ]
   },
   "fails": {},
@@ -757,24 +757,79 @@
         "id": "https://news.hada.io/topic?id=37917",
         "title": "Llama.cpp용 AMD 특화 패치",
         "link": "https://news.hada.io/topic?id=37917"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37931",
+        "title": "리만 가설이란 무엇인가? 시각적으로 이해하기",
+        "link": "https://news.hada.io/topic?id=37931"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37932",
+        "title": "Show GN: ARCUS-STACK - 매번하는 반복을 조금 더 똑똑하게, 여러 AI 코딩 에이전트에게 시킬 수 있는 스킬팩",
+        "link": "https://news.hada.io/topic?id=37932"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37933",
+        "title": "USAID Files - 빅테크 협력과 허위정보 대응에 관한 내부 자료",
+        "link": "https://news.hada.io/topic?id=37933"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37934",
+        "title": "Show GN: RealView - 머스크가 공개한 테슬라 Reality View 구조를 코드로 구현, 맥북 한 대로 학습",
+        "link": "https://news.hada.io/topic?id=37934"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37937",
+        "title": "기업 문화 = Slack 이모지 ÷ √직원 수",
+        "link": "https://news.hada.io/topic?id=37937"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37938",
+        "title": "하드디스크 가격이 심각해졌다",
+        "link": "https://news.hada.io/topic?id=37938"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37939",
+        "title": "IBM, 컨설팅 부문 대부분 직무의 이민 스폰서십 종료",
+        "link": "https://news.hada.io/topic?id=37939"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37941",
+        "title": "영국의 유령역들",
+        "link": "https://news.hada.io/topic?id=37941"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37942",
+        "title": "Show GN: 웰사 한글 입력기 - adb 로 안드로이드 입력칸에 한글 넣기",
+        "link": "https://news.hada.io/topic?id=37942"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37944",
+        "title": "NP_R ≠ PAR_R: 실수 계산 모델에서 퍼머넌트의 짧은 인증서가 없다는 연구",
+        "link": "https://news.hada.io/topic?id=37944"
       }
     ]
   },
   "dropped": {},
-  "outbox": [],
+  "outbox": [
+    {
+      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 9건이 피드에서 밀려나 알리지 못했습니다.",
+      "kind": "notice"
+    }
+  ],
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37919",
-      "https://news.hada.io/topic?id=37920",
-      "https://news.hada.io/topic?id=37921",
-      "https://news.hada.io/topic?id=37922",
-      "https://news.hada.io/topic?id=37923",
-      "https://news.hada.io/topic?id=37925",
-      "https://news.hada.io/topic?id=37927",
-      "https://news.hada.io/topic?id=37928",
-      "https://news.hada.io/topic?id=37930",
-      "https://news.hada.io/topic?id=37931"
+      "https://news.hada.io/topic?id=37945",
+      "https://news.hada.io/topic?id=37946",
+      "https://news.hada.io/topic?id=37947",
+      "https://news.hada.io/topic?id=37948",
+      "https://news.hada.io/topic?id=37949",
+      "https://news.hada.io/topic?id=37950",
+      "https://news.hada.io/topic?id=37951",
+      "https://news.hada.io/topic?id=37952",
+      "https://news.hada.io/topic?id=37953",
+      "https://news.hada.io/topic?id=37954"
     ]
   },
   "lost": {},
