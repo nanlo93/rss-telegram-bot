@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37955",
+      "https://news.hada.io/topic?id=37954",
+      "https://news.hada.io/topic?id=37953",
+      "https://news.hada.io/topic?id=37952",
+      "https://news.hada.io/topic?id=37951",
+      "https://news.hada.io/topic?id=37950",
+      "https://news.hada.io/topic?id=37949",
+      "https://news.hada.io/topic?id=37948",
+      "https://news.hada.io/topic?id=37947",
+      "https://news.hada.io/topic?id=37946",
       "https://news.hada.io/topic?id=37944",
       "https://news.hada.io/topic?id=37942",
       "https://news.hada.io/topic?id=37941",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37519",
       "https://news.hada.io/topic?id=37518",
       "https://news.hada.io/topic?id=37517",
-      "https://news.hada.io/topic?id=37516",
-      "https://news.hada.io/topic?id=37513",
-      "https://news.hada.io/topic?id=37512",
-      "https://news.hada.io/topic?id=37511",
-      "https://news.hada.io/topic?id=37510",
-      "https://news.hada.io/topic?id=37508",
-      "https://news.hada.io/topic?id=37507",
-      "https://news.hada.io/topic?id=37506",
-      "https://news.hada.io/topic?id=37505",
-      "https://news.hada.io/topic?id=37504",
-      "https://news.hada.io/topic?id=37502"
+      "https://news.hada.io/topic?id=37516"
     ]
   },
   "fails": {},
@@ -757,24 +757,79 @@
         "id": "https://news.hada.io/topic?id=37944",
         "title": "NP_R ≠ PAR_R: 실수 계산 모델에서 퍼머넌트의 짧은 인증서가 없다는 연구",
         "link": "https://news.hada.io/topic?id=37944"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37946",
+        "title": "C++에서 = default와 {}는 같은 생성자가 아님",
+        "link": "https://news.hada.io/topic?id=37946"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37947",
+        "title": "Show HN: 4년에 걸쳐 Vim 매뉴얼 한 권을 완성했습니다",
+        "link": "https://news.hada.io/topic?id=37947"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37948",
+        "title": "Kagi Watch - 어린이를 위한 화면 없는 무전기",
+        "link": "https://news.hada.io/topic?id=37948"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37949",
+        "title": "Show GN: Relic - 리버싱을 위한 디스어셈블러·디컴파일러",
+        "link": "https://news.hada.io/topic?id=37949"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37950",
+        "title": "Google, 1인 Android 개발자의 전화번호와 주소 공개 예정",
+        "link": "https://news.hada.io/topic?id=37950"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37951",
+        "title": "AI가 당신 뒷담화를 나누는 단체 채팅방",
+        "link": "https://news.hada.io/topic?id=37951"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37952",
+        "title": "형식 검증이 가능한 주류 프로그래밍 언어의 필요성",
+        "link": "https://news.hada.io/topic?id=37952"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37953",
+        "title": "이메일 주도권 되찾기",
+        "link": "https://news.hada.io/topic?id=37953"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37954",
+        "title": "Rvoip: Rust로 구현한 VoIP 스택",
+        "link": "https://news.hada.io/topic?id=37954"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37955",
+        "title": "Show GN: IdeaPulse - 아이디어 한 줄과 가장 큰 고민을 고르면 다음 한 걸음을 알려 주는 도구",
+        "link": "https://news.hada.io/topic?id=37955"
       }
     ]
   },
   "dropped": {},
-  "outbox": [],
+  "outbox": [
+    {
+      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 1건이 피드에서 밀려나 알리지 못했습니다.",
+      "kind": "notice"
+    }
+  ],
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37945",
-      "https://news.hada.io/topic?id=37946",
-      "https://news.hada.io/topic?id=37947",
-      "https://news.hada.io/topic?id=37948",
-      "https://news.hada.io/topic?id=37949",
-      "https://news.hada.io/topic?id=37950",
-      "https://news.hada.io/topic?id=37951",
-      "https://news.hada.io/topic?id=37952",
-      "https://news.hada.io/topic?id=37953",
-      "https://news.hada.io/topic?id=37954"
+      "https://news.hada.io/topic?id=37956",
+      "https://news.hada.io/topic?id=37957",
+      "https://news.hada.io/topic?id=37959",
+      "https://news.hada.io/topic?id=37960",
+      "https://news.hada.io/topic?id=37961",
+      "https://news.hada.io/topic?id=37962",
+      "https://news.hada.io/topic?id=37963",
+      "https://news.hada.io/topic?id=37964",
+      "https://news.hada.io/topic?id=37965",
+      "https://news.hada.io/topic?id=37966"
     ]
   },
   "lost": {},
