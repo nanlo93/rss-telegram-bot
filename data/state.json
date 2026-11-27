@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37917",
+      "https://news.hada.io/topic?id=37916",
+      "https://news.hada.io/topic?id=37915",
+      "https://news.hada.io/topic?id=37914",
+      "https://news.hada.io/topic?id=37913",
+      "https://news.hada.io/topic?id=37912",
+      "https://news.hada.io/topic?id=37911",
+      "https://news.hada.io/topic?id=37910",
+      "https://news.hada.io/topic?id=37909",
+      "https://news.hada.io/topic?id=37908",
       "https://news.hada.io/topic?id=37903",
       "https://news.hada.io/topic?id=37902",
       "https://news.hada.io/topic?id=37901",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37492",
       "https://news.hada.io/topic?id=37491",
       "https://news.hada.io/topic?id=37490",
-      "https://news.hada.io/topic?id=37489",
-      "https://news.hada.io/topic?id=37488",
-      "https://news.hada.io/topic?id=37487",
-      "https://news.hada.io/topic?id=37485",
-      "https://news.hada.io/topic?id=37484",
-      "https://news.hada.io/topic?id=37483",
-      "https://news.hada.io/topic?id=37482",
-      "https://news.hada.io/topic?id=37481",
-      "https://news.hada.io/topic?id=37480",
-      "https://news.hada.io/topic?id=37479",
-      "https://news.hada.io/topic?id=37478"
+      "https://news.hada.io/topic?id=37489"
     ]
   },
   "fails": {},
@@ -757,24 +757,79 @@
         "id": "https://news.hada.io/topic?id=37903",
         "title": "재무부 CIO, 본업 대신 바이브 코딩에 너무 바쁜 상태 #147",
         "link": "https://news.hada.io/topic?id=37903"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37908",
+        "title": "Moat: OpenRouter를 대체하는 서비스",
+        "link": "https://news.hada.io/topic?id=37908"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37909",
+        "title": "45°C 냉각수 입구 온도가 칠러를 퇴장시켰다. 대부분은 아직 눈치채지 못했다",
+        "link": "https://news.hada.io/topic?id=37909"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37910",
+        "title": "재미를 위해, 수익 없이 작은 태평양 섬에 공중전화 설치하기",
+        "link": "https://news.hada.io/topic?id=37910"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37911",
+        "title": "Geminispace에 들어가기, 텍스트 중심 Gemini 네트워크로 블로그 옮기기",
+        "link": "https://news.hada.io/topic?id=37911"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37912",
+        "title": "널 원뿔에서 출발한 중력의 대수적 양자화",
+        "link": "https://news.hada.io/topic?id=37912"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37913",
+        "title": "CIA 비기밀 시스템, 사이버공격으로 침해당해",
+        "link": "https://news.hada.io/topic?id=37913"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37914",
+        "title": "재미로 AWS Lambda에서 Qwen 서빙하기, 비용은 80배 넘게",
+        "link": "https://news.hada.io/topic?id=37914"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37915",
+        "title": "AI가 완치한 질병 추적하기",
+        "link": "https://news.hada.io/topic?id=37915"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37916",
+        "title": "미증명 가정 없이 준지수 시간에 정수 소인수분해",
+        "link": "https://news.hada.io/topic?id=37916"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37917",
+        "title": "Llama.cpp용 AMD 특화 패치",
+        "link": "https://news.hada.io/topic?id=37917"
       }
     ]
   },
   "dropped": {},
-  "outbox": [],
+  "outbox": [
+    {
+      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 2건이 피드에서 밀려나 알리지 못했습니다.",
+      "kind": "notice"
+    }
+  ],
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37904",
-      "https://news.hada.io/topic?id=37907",
-      "https://news.hada.io/topic?id=37908",
-      "https://news.hada.io/topic?id=37909",
-      "https://news.hada.io/topic?id=37910",
-      "https://news.hada.io/topic?id=37911",
-      "https://news.hada.io/topic?id=37912",
-      "https://news.hada.io/topic?id=37913",
-      "https://news.hada.io/topic?id=37914",
-      "https://news.hada.io/topic?id=37915"
+      "https://news.hada.io/topic?id=37919",
+      "https://news.hada.io/topic?id=37920",
+      "https://news.hada.io/topic?id=37921",
+      "https://news.hada.io/topic?id=37922",
+      "https://news.hada.io/topic?id=37923",
+      "https://news.hada.io/topic?id=37925",
+      "https://news.hada.io/topic?id=37927",
+      "https://news.hada.io/topic?id=37928",
+      "https://news.hada.io/topic?id=37930",
+      "https://news.hada.io/topic?id=37931"
     ]
   },
   "lost": {},
