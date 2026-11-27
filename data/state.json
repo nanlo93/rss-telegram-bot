@@ -309,56 +309,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37778",
-        "title": "LLM 에이전트는 사용자가 아니라 제공 회사를 위해 일한다",
-        "link": "https://news.hada.io/topic?id=37778"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37779",
-        "title": "Show GN: cdx-dock – LangChain·CrewAI·AutoGen·Hermes 1줄 연결 및 토큰·추론 제어 SDK",
-        "link": "https://news.hada.io/topic?id=37779"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37782",
-        "title": "워싱턴에서 누가 Nvidia 주식을 보유하고 거래하는가",
-        "link": "https://news.hada.io/topic?id=37782"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37783",
-        "title": "주 개발자가 학교에 있던 사이 GitHub에서 차단된 GTA 6 Recomp(Leonida)",
-        "link": "https://news.hada.io/topic?id=37783"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37785",
-        "title": "Quad9, 프랑스에서 DNS 서비스 철수",
-        "link": "https://news.hada.io/topic?id=37785"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37786",
-        "title": "스마트 기능 없는 TV를 딱 필요한 만큼만 스마트하게 만들기",
-        "link": "https://news.hada.io/topic?id=37786"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37787",
-        "title": "Brendan Gregg의 제단에서 경배하기",
-        "link": "https://news.hada.io/topic?id=37787"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37788",
-        "title": "Tidal, AI 생성 음악 금지",
-        "link": "https://news.hada.io/topic?id=37788"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37789",
-        "title": "드론으로 만든 폐차장 지도",
-        "link": "https://news.hada.io/topic?id=37789"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37790",
-        "title": "22개 조직의 Check Point 서버를 침해한 사이버 공격 캠페인",
-        "link": "https://news.hada.io/topic?id=37790"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37791",
         "title": "Jetty Pro - macOS Dock을 보완하거나 대체하는 맞춤형 팔레트 앱",
         "link": "https://news.hada.io/topic?id=37791"
@@ -811,12 +761,7 @@
     ]
   },
   "dropped": {},
-  "outbox": [
-    {
-      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 1건이 피드에서 밀려나 알리지 못했습니다.",
-      "kind": "notice"
-    }
-  ],
+  "outbox": [],
   "rebase": {},
   "deferred": {
     "1": [
