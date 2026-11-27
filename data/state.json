@@ -309,56 +309,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37766",
-        "title": "Show GN: Whaatcher - AI 에이전트 기반 W/F에 최적화된 새로운 지향점의 개발 도구",
-        "link": "https://news.hada.io/topic?id=37766"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37767",
-        "title": "인도 야당, Instagram 계정 복구 요구하며 Meta 사무실에 난입",
-        "link": "https://news.hada.io/topic?id=37767"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37768",
-        "title": "Show GN: orca-orchestration-kit - AI 코딩 에이전트 세션 수십 개로 병렬 개발하는 3계층 오케스트레이션 키트",
-        "link": "https://news.hada.io/topic?id=37768"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37769",
-        "title": "2035년이 일찍 찾아왔다",
-        "link": "https://news.hada.io/topic?id=37769"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37770",
-        "title": "C++26이 다시 완성됐다: ISO C++ 표준 회의 보고",
-        "link": "https://news.hada.io/topic?id=37770"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37771",
-        "title": "Sneakernet - 인터넷 없이 사람의 이동으로 디지털 메시지를 전달하는 시스템",
-        "link": "https://news.hada.io/topic?id=37771"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37773",
-        "title": "Show GN: Loupist - 스스로 학습하는 금융 리서치 봇",
-        "link": "https://news.hada.io/topic?id=37773"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37774",
-        "title": "Jensen Huang 복귀를 둘러싼 Polymarket 내부자 거래 의혹 조사",
-        "link": "https://news.hada.io/topic?id=37774"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37775",
-        "title": "AMD EPYC Zen 6 대 Zen 1 성능 비교: 10년도 안 돼 기하평균 12.1배",
-        "link": "https://news.hada.io/topic?id=37775"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37777",
-        "title": "iperf/iperf3 현대화와 fireperf 도입",
-        "link": "https://news.hada.io/topic?id=37777"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37778",
         "title": "LLM 에이전트는 사용자가 아니라 제공 회사를 위해 일한다",
         "link": "https://news.hada.io/topic?id=37778"
@@ -811,12 +761,7 @@
     ]
   },
   "dropped": {},
-  "outbox": [
-    {
-      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 9건이 피드에서 밀려나 알리지 못했습니다.",
-      "kind": "notice"
-    }
-  ],
+  "outbox": [],
   "rebase": {},
   "deferred": {
     "1": [
