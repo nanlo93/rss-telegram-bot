@@ -309,56 +309,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37791",
-        "title": "Jetty Pro - macOS Dock을 보완하거나 대체하는 맞춤형 팔레트 앱",
-        "link": "https://news.hada.io/topic?id=37791"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37792",
-        "title": "맥스 테그마크 “Anthropic 직원들, ‘세계 장악’을 공개적으로 이야기한다”",
-        "link": "https://news.hada.io/topic?id=37792"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37793",
-        "title": "Anthropic 주가, 공모가 83달러 아래로 하락",
-        "link": "https://news.hada.io/topic?id=37793"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37794",
-        "title": "Ask HN: Anthropic이 우리 회사가 모델 증류를 한다고 하는데, 아니라는 걸 어떻게 입증할 수 있을까요?",
-        "link": "https://news.hada.io/topic?id=37794"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37795",
-        "title": "Windows에서 실행되는 GTA 6",
-        "link": "https://news.hada.io/topic?id=37795"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37796",
-        "title": "Ternary Bonsai 2.5 27B - 5.9GB 크기를 유지하며 에이전트 코딩을 강화한 로컬 AI 모델",
-        "link": "https://news.hada.io/topic?id=37796"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37797",
-        "title": "Microsoft, 대규모 장애 이후 ‘Code Red’ 선언…내부 메모로 드러난 대응 문제",
-        "link": "https://news.hada.io/topic?id=37797"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37798",
-        "title": "유휴 컴퓨팅 자원으로 로컬 모델을 학습시키는 엔진",
-        "link": "https://news.hada.io/topic?id=37798"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37799",
-        "title": "데이터 표현을 위한 Lua",
-        "link": "https://news.hada.io/topic?id=37799"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37800",
-        "title": "MailFlow - 여러 이메일 계정을 한곳에서 관리하는 셀프호스팅 웹메일",
-        "link": "https://news.hada.io/topic?id=37800"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37801",
         "title": "iPod Nano 5G 해방하기",
         "link": "https://news.hada.io/topic?id=37801"
@@ -811,12 +761,7 @@
     ]
   },
   "dropped": {},
-  "outbox": [
-    {
-      "text": "'GeekNews' 대기열이 가득 차 미뤄 둔 새 글 4건이 피드에서 밀려나 알리지 못했습니다.",
-      "kind": "notice"
-    }
-  ],
+  "outbox": [],
   "rebase": {},
   "deferred": {
     "1": [
