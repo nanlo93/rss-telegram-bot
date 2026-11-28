@@ -2,6 +2,16 @@
   "update_offset": 241577164,
   "seen": {
     "1": [
+      "https://news.hada.io/topic?id=37983",
+      "https://news.hada.io/topic?id=37980",
+      "https://news.hada.io/topic?id=37979",
+      "https://news.hada.io/topic?id=37978",
+      "https://news.hada.io/topic?id=37976",
+      "https://news.hada.io/topic?id=37975",
+      "https://news.hada.io/topic?id=37974",
+      "https://news.hada.io/topic?id=37973",
+      "https://news.hada.io/topic?id=37972",
+      "https://news.hada.io/topic?id=37971",
       "https://news.hada.io/topic?id=37970",
       "https://news.hada.io/topic?id=37969",
       "https://news.hada.io/topic?id=37968",
@@ -291,17 +301,7 @@
       "https://news.hada.io/topic?id=37544",
       "https://news.hada.io/topic?id=37543",
       "https://news.hada.io/topic?id=37542",
-      "https://news.hada.io/topic?id=37541",
-      "https://news.hada.io/topic?id=37540",
-      "https://news.hada.io/topic?id=37539",
-      "https://news.hada.io/topic?id=37537",
-      "https://news.hada.io/topic?id=37536",
-      "https://news.hada.io/topic?id=37535",
-      "https://news.hada.io/topic?id=37534",
-      "https://news.hada.io/topic?id=37533",
-      "https://news.hada.io/topic?id=37531",
-      "https://news.hada.io/topic?id=37530",
-      "https://news.hada.io/topic?id=37529"
+      "https://news.hada.io/topic?id=37541"
     ]
   },
   "fails": {},
@@ -757,6 +757,56 @@
         "id": "https://news.hada.io/topic?id=37970",
         "title": "Claude가 자신을 동물 캐릭터로 그린다면?",
         "link": "https://news.hada.io/topic?id=37970"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37971",
+        "title": "Michael Nielsen, 자신의 신경망 책을 내림",
+        "link": "https://news.hada.io/topic?id=37971"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37972",
+        "title": "DART 소행성 궤도 변경 실험의 충돌 흔적을 담은 첫 이미지",
+        "link": "https://news.hada.io/topic?id=37972"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37973",
+        "title": "Convex 스킬, 사용자에게 알리지 않고 앱 아이디어를 원격 서버로 전송",
+        "link": "https://news.hada.io/topic?id=37973"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37974",
+        "title": "미국 주정부들, Grok의 비동의 성적 이미지 생성 및 유통 문제로 SpaceX 제소",
+        "link": "https://news.hada.io/topic?id=37974"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37975",
+        "title": "컴퓨터 검증을 통과한 거짓 증명",
+        "link": "https://news.hada.io/topic?id=37975"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37976",
+        "title": "머신러닝의 불확실성 입문",
+        "link": "https://news.hada.io/topic?id=37976"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37978",
+        "title": "모두가 모든 것을 만들고 있다",
+        "link": "https://news.hada.io/topic?id=37978"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37979",
+        "title": "Jolt - C와 대화하는 Clojure",
+        "link": "https://news.hada.io/topic?id=37979"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37980",
+        "title": "BUI: BlenderUI를 사용하는 세계 최대 2D 차트 라이브러리",
+        "link": "https://news.hada.io/topic?id=37980"
+      },
+      {
+        "id": "https://news.hada.io/topic?id=37983",
+        "title": "“나는 두렵다”: 《Careless People》의 Sarah Wynn-Williams가 겪는 발언 금지 명령 아래의 삶",
+        "link": "https://news.hada.io/topic?id=37983"
       }
     ]
   },
@@ -765,16 +815,15 @@
   "rebase": {},
   "deferred": {
     "1": [
-      "https://news.hada.io/topic?id=37971",
-      "https://news.hada.io/topic?id=37972",
-      "https://news.hada.io/topic?id=37973",
-      "https://news.hada.io/topic?id=37974",
-      "https://news.hada.io/topic?id=37975",
-      "https://news.hada.io/topic?id=37976",
-      "https://news.hada.io/topic?id=37978",
-      "https://news.hada.io/topic?id=37979",
-      "https://news.hada.io/topic?id=37980",
-      "https://news.hada.io/topic?id=37983"
+      "https://news.hada.io/topic?id=37984",
+      "https://news.hada.io/topic?id=37987",
+      "https://news.hada.io/topic?id=37988",
+      "https://news.hada.io/topic?id=37989",
+      "https://news.hada.io/topic?id=37990",
+      "https://news.hada.io/topic?id=37991",
+      "https://news.hada.io/topic?id=37993",
+      "https://news.hada.io/topic?id=37994",
+      "https://news.hada.io/topic?id=37995"
     ]
   },
   "lost": {},
