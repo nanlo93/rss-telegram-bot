@@ -309,56 +309,6 @@
   "pending": {
     "1": [
       {
-        "id": "https://news.hada.io/topic?id=37801",
-        "title": "iPod Nano 5G 해방하기",
-        "link": "https://news.hada.io/topic?id=37801"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37802",
-        "title": "Cloudflare가 기반 인프라의 미비점을 가림",
-        "link": "https://news.hada.io/topic?id=37802"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37804",
-        "title": "오픈 소스에서 월 반복 매출 2만 달러까지: EmailEngine의 여정",
-        "link": "https://news.hada.io/topic?id=37804"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37806",
-        "title": "2026년 기업용 AI 현황",
-        "link": "https://news.hada.io/topic?id=37806"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37807",
-        "title": "AI 네이티브 서비스 비즈니스 모델의 내부 구조",
-        "link": "https://news.hada.io/topic?id=37807"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37808",
-        "title": "GPT-6 모델, 내재적 단백질 설계 능력 입증",
-        "link": "https://news.hada.io/topic?id=37808"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37811",
-        "title": "Show GN: Tern - Ctrl+ㅊ 를 Ctrl-C 로 처리해주는 한글 특화 터미널 에뮬레이터 앱",
-        "link": "https://news.hada.io/topic?id=37811"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37812",
-        "title": "심장마비와 뇌졸중 위험, 수십 년 전에 감지 가능",
-        "link": "https://news.hada.io/topic?id=37812"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37813",
-        "title": "Matrix Multiplication의 Θ(n^2.25) 시간 복잡도 [pdf]",
-        "link": "https://news.hada.io/topic?id=37813"
-      },
-      {
-        "id": "https://news.hada.io/topic?id=37814",
-        "title": "Grafana 12.4.16, 13.0.14, 13.1.11, 13.2.7, 13.3.2 (여러 CVE 관련)",
-        "link": "https://news.hada.io/topic?id=37814"
-      },
-      {
         "id": "https://news.hada.io/topic?id=37818",
         "title": "여행 가방에 들어가는 이탈리아 접이식 자전거 디자인",
         "link": "https://news.hada.io/topic?id=37818"
